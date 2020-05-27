@@ -1,0 +1,36 @@
+{
+  "name": "sever-app",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "nodemon index.js",
+    "start": "node index.js"
+  },
+  "engines": {
+    "node": "12.13.1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@google-cloud/datastore": "^5.1.0",
+    "@hapi/joi": "^17.1.0",
+    "@tensorflow/tfjs": "^1.5.2",
+    "@tensorflow/tfjs-node": "^1.5.2",
+    "array-average": "^0.1.2",
+    "bcrypt": "^3.0.8",
+    "config": "^3.2.5",
+    "cors": "^2.8.5",
+    "csv-writer": "^1.6.0",
+    "express": "^4.17.1",
+    "express-async-errors": "^3.1.1",
+    "joi-objectid": "^3.0.1",
+    "json2csv": "^5.0.1",
+    "jsonwebtoken": "^8.5.1",
+    "lodash": "^4.17.15",
+    "moment": "^2.26.0",
+    "morgan": "^1.9.1",
+    "multer": "^1.4.2",
+    "nodemon": "^2.0.4"
+  }
+}
