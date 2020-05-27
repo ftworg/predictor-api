@@ -1,12 +1,12 @@
 sudo: required
 services:
-  - docker
+- docker
 deploy:
   provider: gae
   project: salesprediction
   keyfile: sales-prediction-auth.json
   no_promote: true
-script: "true"
+script: 'true'
 before_install:
-  - openssl aes-256-cbc -K $encrypted_17ee9b8d53d8_key -iv $encrypted_17ee9b8d53d8_iv
-    -in sales-prediction-auth.json.enc -out sales-prediction-auth.json -d
+- openssl aes-256-cbc -K $encrypted_7a2b9e1b64a3_key -iv $encrypted_7a2b9e1b64a3_iv
+  -in sales-prediction-auth.json.enc -out sales-prediction-auth.json -d
