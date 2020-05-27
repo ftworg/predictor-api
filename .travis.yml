@@ -3,10 +3,8 @@ services:
   - docker
 deploy:
   provider: gae
-  project: "salesprediction"
+  project: salesprediction
   no_promote: true
-before_install:
-  - openssl aes-256-cbc -K $encrypted_1d4d6e09d10b_key -iv $encrypted_1d4d6e09d10b_iv
-    -in sales-prediction-auth.json.enc -out sales-prediction-auth.json
-    -d
 script: "true"
+before_install:
+  - openssl aes-256-cbc -K $encrypted_17ee9b8d53d8_key -iv $encrypted_17ee9b8d53d8_iv -in sales-prediction-auth.json.enc -out ./sales-prediction-auth.json -d
