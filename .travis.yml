@@ -1,3 +1,6 @@
+sudo: required
+services:
+  - docker
 deploy:
   provider: gae
   project: "salesprediction"
