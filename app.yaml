@@ -1,2 +1,4 @@
-runtime: custom
-env: flex
+runtime: nodejs12
+env_variables:
+  tp_jwtPrivateKey: "t0S@!"
+  GOOGLE_APPLICATION_CREDENTIALS: "sales-prediction-auth.json"
