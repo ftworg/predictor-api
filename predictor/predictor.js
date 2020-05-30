@@ -86,11 +86,9 @@ var feedToModel = async (input,inp_sequence,prod_ind) => {
 
 var predict_values = async function(raw_inputs,gcpOutput){
   let records = gcpOutput[0];
-  let requestLevelSalesCache = gcpOutput[1].records;
-  let requestLevelSequenceCache = gcpOutput[2].records;
+  let requestLevelCache = gcpOutput[1].records;
   let outputobjs={};
-  let inputSalesMaps = {};
-  let inputSequenceMaps = {};
+  let inputMaps = {};
   for(let record_ind=0;record_ind<records.length;record_ind++){
     let record = records[record_ind];
     let product = record.product;
@@ -108,6 +106,7 @@ var predict_values = async function(raw_inputs,gcpOutput){
           inputObj["seq_inp"]=new_seq_inp;
         }
         inputObj["output"]= await feedToModel(inputObj.input,inputObj.seq_inp,prod_ind);
+        // console.log(inputObj);
       }
       //console.log(inputObj);
       if(inputObj.output!==undefined && inputObj.actual){
@@ -124,29 +123,19 @@ var predict_values = async function(raw_inputs,gcpOutput){
       // console.log("Sequence cache");
       // console.log(Object.keys(requestLevelSequenceCache));
       //Create new sales cache entry
-      if(requestLevelSalesCache[joined_input]===undefined || requestLevelSalesCache[joined_input][product]===undefined){
-        if(inputSalesMaps[joined_input]!==undefined){
-          inputSalesMaps[joined_input][product] = inputObj.output;
+      if(requestLevelCache[joined_input]===undefined || requestLevelCache[joined_input][product]===undefined){
+        if(inputMaps[joined_input]===undefined){
+          inputMaps[joined_input]={};
         }
-        else{
-          inputSalesMaps[joined_input]={};
-          inputSalesMaps[joined_input][product] = inputObj.output;
-        }
-      }
-      // Create new Sequence cache entry
-      if(requestLevelSequenceCache[joined_input]===undefined || requestLevelSequenceCache[joined_input][product]===undefined){
-        if(inputSequenceMaps[joined_input]!==undefined){
-          inputSequenceMaps[joined_input][product] = inputObj.seq_inp;
-        }
-        else{
-          inputSequenceMaps[joined_input]={};
-          inputSequenceMaps[joined_input][product] = inputObj.seq_inp;
-        }
+        inputMaps[joined_input][product]={
+          "input": inputObj.seq_inp,
+          "output": inputObj.output
+        };
       }
     }
   }
-  await gcpUtils.updateNewObjects(inputSalesMaps,'SalesRecord');
-  await gcpUtils.updateNewObjects(inputSequenceMaps,'SequenceInput');
+  // console.log(inputMaps);
+  await gcpUtils.updateProductEntries(inputMaps);
   //Arrange for aggregation
   let outs=[]
   for(let i=0;i<raw_inputs.length;i++){
@@ -358,18 +347,14 @@ var getProductSet = (catObj) => {
 
 var initializeCounts = () => {
   global.PREDICTIONS = 0;
-  global.SALES_READS = 0;
-  global.SEQUENCE_READS =0;
-  global.SALES_WRITES = 0;
-  global.SEQUENCE_WRITES = 0;
+  global.READS = 0;
+  global.WRITES = 0;
 }
 
 var addCounts = (obj) => {
   obj["predictions"] = global.PREDICTIONS;
-  obj["sales_reads"] = global.SALES_READS;
-  obj["sequence_reads"] = global.SEQUENCE_READS;
-  obj["sales_writes"] = global.SALES_WRITES;
-  obj["sequence_writes"] = global.SEQUENCE_WRITES;
+  obj["reads"] = global.READS;
+  obj["writes"] = global.WRITES;
   return obj;
 }
 
@@ -386,7 +371,7 @@ var runPrediction = async function(inputJson) {
     inputs = await composeInputs(inputJson);
     //Getting existing records
     let gcpOutput = await gcpUtils.fetchExistingRecords(inputs,products);
-    //console.log(gcpOutput[0]);
+    // console.log(gcpOutput);
     result = await predict_values(inputs,gcpOutput);
     result = agrregateOutput(inputs,result,inputJson.criteria);
     outputs = addRevenue(result, inputs);
