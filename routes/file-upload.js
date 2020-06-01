@@ -67,6 +67,7 @@ router.get("/", (req, res) => {
 });
 
 router.post("/", (req, res) => {
+  console.log(req);
   upload(req, res, (err) => {
     if (err) {
       res.status(500).send("Server Error");

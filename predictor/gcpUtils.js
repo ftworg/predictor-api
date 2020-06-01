@@ -5,128 +5,6 @@ const itemObj = require('./assets/rev_items.json');
 
 const TOOMANYREADS = 120;
 
-let updateOrCreateSalesRecord = async (input,obj) => {
-    global.SALES_WRITES = global.SALES_WRITES + 1;
-    global.SALES_READS = global.SALES_READS + 1;
-    const query = datastore.createQuery('SalesRecord').filter('Input',input);  
-    const [records] = await datastore.runQuery(query);
-    //console.log(records);
-    let items = records[0] && records[0].Items ? records[0].Items : undefined;
-    if(items===undefined){
-        //console.log("New record");
-        const key = datastore.key('SalesRecord');
-        const data = {
-            'Input': input,
-            'Items': JSON.stringify(obj)
-        }
-        const entity = {
-            key: key,
-            data: data,
-            excludeLargeProperties: true
-        };
-          
-        await datastore.upsert(entity);
-    }
-    else{
-        //console.log("Existing");
-        items = JSON.parse(items);
-        let obj_keys = Object.keys(obj);
-        for(let obj_key_ind=0;obj_key_ind<obj_keys.length;obj_key_ind++){
-            if(items[obj_keys[obj_key_ind]]===undefined){
-                items[obj_keys[obj_key_ind]]=obj[obj_keys[obj_key_ind]]
-            }
-        }
-        items = JSON.stringify(items);
-        const taskKey = records[0][datastore.KEY];
-        entity = {
-            key: taskKey,
-            data: {
-                'Input': input,
-                'Items': items
-            },
-            excludeLargeProperties: true
-        };
-        await datastore.update(entity);
-    }
-}
-
-let updateOrCreateSequenceRecord = async (input,obj) => {
-    global.SEQUENCE_READS = global.SEQUENCE_READS + 1;
-    global.SEQUENCE_WRITES = global.SEQUENCE_WRITES + 1;
-    const query = datastore.createQuery('SequenceInput').filter('Input',input);  
-    const [records] = await datastore.runQuery(query);
-    //console.log(records);
-    let items = records[0] && records[0].Data ? records[0].Data : undefined;
-    if(items===undefined){
-        //console.log("New record");
-        const key = datastore.key('SequenceInput');
-        let payload = {
-            'Input': input,
-            'Data': JSON.stringify(obj)
-        }
-        const entity = {
-            key: key,
-            data: payload,
-            excludeLargeProperties: true
-        };
-          
-        await datastore.upsert(entity);
-    }
-    else{
-        //console.log("Existing");
-        data = JSON.parse(items);
-        let obj_keys = Object.keys(obj);
-        for(let obj_key_ind=0;obj_key_ind<obj_keys.length;obj_key_ind++){
-            if(data[obj_keys[obj_key_ind]]===undefined){
-                data[obj_keys[obj_key_ind]]=obj[obj_keys[obj_key_ind]]
-            }
-        }
-        data = JSON.stringify(data);
-        const taskKey = records[0][datastore.KEY];
-        entity = {
-            key: taskKey,
-            data: {
-                'Input': input,
-                'Data': data
-            },
-            excludeLargeProperties: true
-        };
-        await datastore.update(entity);
-    }
-}
-
-let getSalesRecord = async (input) => {
-    global.SALES_READS = global.SALES_READS + 1;
-    const query = datastore.createQuery('SalesRecord').filter('Input',input);  
-    const [records] = await datastore.runQuery(query);
-    let res = records[0] && records[0].Items ? records[0].Items : undefined;
-    try{
-        return JSON.parse(res);
-    }catch(e){
-        return undefined;
-    }
-    // records.forEach(record => {
-    //   const recordKey = record[datastore.KEY];
-    //   //console.log(recordKey.id, record);
-    // });
-}
-
-let getSequenceInputs = async (input) => {
-    global.SEQUENCE_READS = global.SEQUENCE_READS + 1;
-    const query = datastore.createQuery('SequenceInput').filter('Input',input);  
-    const [records] = await datastore.runQuery(query);
-    let res = records[0] && records[0].Data ? records[0].Data : undefined;
-    try{
-        return JSON.parse(res);
-    }catch(e){
-        return undefined;
-    }
-    // records.forEach(record => {
-    //   const recordKey = record[datastore.KEY];
-    //   //console.log(recordKey.id, record);
-    // });
-}
-
 let getPreviousInput = (input) => {
     var d = new Date(input[0],input[1]-1,input[2]);
     var tod = input[3];
@@ -162,40 +40,10 @@ let getCachedProductEntries = async (cache,input) => {
     return records[input];
 }
 
-let getCachedSalesRecord = async (cache,input) => {
-    let records = cache.records;
-    let visited = cache.visited;
-    if(visited[input]===undefined){
-        //console.log("Sales Record Read");
-        visited[input] = true;
-        records[input] = await getSalesRecord(input);
-    }
-    return records[input];
-}
-
-let updateNewObjects = async (obj,kind) => {
-    //console.log("update new object");
-    let keys = Object.keys(obj);
-    if(kind==='SalesRecord'){
-        for(let key_ind=0;key_ind<keys.length;key_ind++){
-            let inp = keys[key_ind];
-            await updateOrCreateSalesRecord(inp,obj[inp]);
-        }
-    }
-    else if(kind==='SequenceInput'){
-        for(let key_ind=0;key_ind<keys.length;key_ind++){
-            let inp = keys[key_ind];
-            await updateOrCreateSequenceRecord(inp,obj[inp]);
-        }
-    }
-    else{
-        throw new Error("Invalid Update Object");
-    }
-}
-
 let updateOrCreateProductEntry = async (input,obj) => {
     global.READS = global.READS + 1;
     global.WRITES = global.WRITES + 1;
+    obj["predicted"] = true;
     const query = datastore.createQuery('ProductEntries').filter('Input',input);  
     const [records] = await datastore.runQuery(query);
     // console.log(records);
@@ -224,6 +72,7 @@ let updateOrCreateProductEntry = async (input,obj) => {
                 data[obj_keys[obj_key_ind]]=obj[obj_keys[obj_key_ind]]
             }
         }
+        data["predicted"] = true;
         data = JSON.stringify(data);
         const taskKey = records[0][datastore.KEY];
         entity = {
@@ -244,17 +93,6 @@ let updateProductEntries = async (obj) => {
         let inp = keys[key_ind];
         await updateOrCreateProductEntry(inp,obj[inp]);
     }
-}
-
-let getCachedSequenceInput = async (cache,input) => {
-    let records = cache.records;
-    let visited = cache.visited;
-    if(visited[input]===undefined){
-        //console.log("Sequence Record Read");
-        visited[input] = true;
-        records[input] = await getSequenceInputs(input);
-    }
-    return records[input];
 }
 
 let fetchExistingRecords = async (inputs,products) => {

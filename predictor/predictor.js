@@ -28,42 +28,6 @@ let check_for_models = async () => {
   }
 }
 
-
-var predict_quantity = async function(input,products) {
-  await check_for_models();
-  var context_input = utils.get_context_input(input);
-  var seq_inputs = utils.get_seq_inputs(global.MODEL_CONFIG["WIN_SIZE"],input);
-  var context_tensors = [];
-  for(let i=0;i<context_input.length;i++){
-    context_tensors.push(tf.tensor(context_input[i]));
-  }
-  var seq_inp_tensor = tf.tensor(seq_inputs);
-  seq_inp_tensor = tf.expandDims(seq_inp_tensor,axis=-1);
-  var outputs=[]
-  for(let ind=0;ind<products.length;ind++){
-    if(products[ind] < global.MODEL_CONFIG["START"] && products[ind] >= global.MODEL_CONFIG["END"]){
-      continue;
-    }
-    var i = products[ind];
-    var output = await global.models[i].predict([seq_inp_tensor,
-                                                context_tensors[0],
-                                                context_tensors[1],
-                                                context_tensors[2],
-                                                context_tensors[3]]);
-    var quantity = output.dataSync();
-    outputs.push(quantity);
-  }
-  outputs=utils.dice_outputs(outputs);
-  var obj = {};
-  for (var i = 0; i < outputs.length; i++) {
-    obj[i]={}
-    for (var j=0; j<outputs[i].length; j++) {
-      obj[i][itemsObj[products[j]]] = Math.floor(outputs[i][j]*100);
-    }
-  }
-  return obj;
-};
-
 var feedToModel = async (input,inp_sequence,prod_ind) => {
   ////console.log("new prediction");
   //console.log(input,inp_sequence,prod_ind)
@@ -84,7 +48,7 @@ var feedToModel = async (input,inp_sequence,prod_ind) => {
   return Math.floor(quantity[0]*100);
 }
 
-var predict_values = async function(raw_inputs,gcpOutput){
+var predict_values = async function(raw_inputs,gcpOutput,updateNewBool){
   let records = gcpOutput[0];
   let requestLevelCache = gcpOutput[1].records;
   let outputobjs={};
@@ -135,7 +99,10 @@ var predict_values = async function(raw_inputs,gcpOutput){
     }
   }
   // console.log(inputMaps);
-  await gcpUtils.updateProductEntries(inputMaps);
+  if(updateNewBool){
+    console.log("Updating");
+    await gcpUtils.updateProductEntries(inputMaps);
+  }
   //Arrange for aggregation
   let outs=[]
   for(let i=0;i<raw_inputs.length;i++){
@@ -260,23 +227,6 @@ var agrregateOutput = function(inputs,outputs,criteria) {
   return finalOutput;
 }
 
-var normalize = function(list_inputs) {
-  tot_inps=[]
-  for(let i=0;i<list_inputs.length;i++){
-    let inputs = list_inputs[i];
-    let new_it=[];
-    new_it.push(inputs[0]/parseFloat(normObj["year"]));
-    new_it.push(inputs[1]/parseFloat(normObj["month"]));
-    new_it.push(inputs[2]/parseFloat(normObj["date"]));
-    new_it.push(inputs[3]/parseFloat(normObj["tod"]));
-    new_it.push(inputs[4]/parseFloat(normObj["branch"]));
-    new_it.push(inputs[5]/parseFloat(normObj["weekday"]));
-    new_it.push(inputs[6]/parseFloat(normObj["ph"]));
-    tot_inps.push(new_it);
-  }
-  return tot_inps;
-}
-
 var addSpecialDays = (inputs, new_Out) => {
   new_Out["holidays"]=[];
   new_Out["weekdays"]={}
@@ -364,7 +314,9 @@ var runPrediction = async function(inputJson) {
   let products = getProductSet(inputJson.category);
   let result;
   let outputs;
-  let outputResObject = {};
+  let outputResObject = {
+    "branches": []
+  };
   let inputs;
   for(let branch=0;branch<branches.length;branch++){
     inputJson.branch = [branches[branch]];
@@ -372,11 +324,15 @@ var runPrediction = async function(inputJson) {
     //Getting existing records
     let gcpOutput = await gcpUtils.fetchExistingRecords(inputs,products);
     // console.log(gcpOutput);
-    result = await predict_values(inputs,gcpOutput);
+    result = await predict_values(inputs,gcpOutput,true);
     result = agrregateOutput(inputs,result,inputJson.criteria);
     outputs = addRevenue(result, inputs);
     let finalOut = packageIO(inputs,outputs);
-    outputResObject[branches[branch]] = finalOut;
+    let branchOutput = {
+      "branch": branches[branch],
+      "data:": finalOut
+    }
+    outputResObject["branches"].push(branchOutput);
   }
   outputResObject = addSpecialDays(inputs,outputResObject);
   outputResObject = addCounts(outputResObject);
@@ -403,5 +359,13 @@ const addRevenue = function(outputs) {
 
 
 module.exports = {
-  runPrediction
+  runPrediction,
+  predict_values,
+  composeInputs,
+  agrregateOutput,
+  addRevenue,
+  addSpecialDays,
+  addCounts,
+  initializeCounts,
+  getProductSet
 };
