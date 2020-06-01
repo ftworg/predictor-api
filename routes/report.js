@@ -10,7 +10,6 @@ router.post("/", auth, async (req, res) => {
   keys.forEach((key) => {
     fields.push(key);
   });
-  let csv = [];
   req.body.forEach((obj) => {
     let temp = [];
     fields.forEach((field) => {

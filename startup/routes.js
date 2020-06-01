@@ -10,6 +10,7 @@ const categories = require("../routes/categories");
 const branches = require("../routes/branch");
 const upload = require("../routes/file-upload");
 const report = require("../routes/report");
+const compare = require("../routes/compare");
 
 module.exports = function (app) {
   app.use(express.json({
@@ -29,6 +30,7 @@ module.exports = function (app) {
   app.use("/api/accuracy", accuracy);
   app.use("/api/categories", categories);
   app.use("/api/report", report);
+  app.use("/api/compare", compare);
 
   app.use(error);
 };

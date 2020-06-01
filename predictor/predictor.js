@@ -28,42 +28,6 @@ let check_for_models = async () => {
   }
 }
 
-
-var predict_quantity = async function(input,products) {
-  await check_for_models();
-  var context_input = utils.get_context_input(input);
-  var seq_inputs = utils.get_seq_inputs(global.MODEL_CONFIG["WIN_SIZE"],input);
-  var context_tensors = [];
-  for(let i=0;i<context_input.length;i++){
-    context_tensors.push(tf.tensor(context_input[i]));
-  }
-  var seq_inp_tensor = tf.tensor(seq_inputs);
-  seq_inp_tensor = tf.expandDims(seq_inp_tensor,axis=-1);
-  var outputs=[]
-  for(let ind=0;ind<products.length;ind++){
-    if(products[ind] < global.MODEL_CONFIG["START"] && products[ind] >= global.MODEL_CONFIG["END"]){
-      continue;
-    }
-    var i = products[ind];
-    var output = await global.models[i].predict([seq_inp_tensor,
-                                                context_tensors[0],
-                                                context_tensors[1],
-                                                context_tensors[2],
-                                                context_tensors[3]]);
-    var quantity = output.dataSync();
-    outputs.push(quantity);
-  }
-  outputs=utils.dice_outputs(outputs);
-  var obj = {};
-  for (var i = 0; i < outputs.length; i++) {
-    obj[i]={}
-    for (var j=0; j<outputs[i].length; j++) {
-      obj[i][itemsObj[products[j]]] = Math.floor(outputs[i][j]*100);
-    }
-  }
-  return obj;
-};
-
 var feedToModel = async (input,inp_sequence,prod_ind) => {
   ////console.log("new prediction");
   //console.log(input,inp_sequence,prod_ind)
@@ -84,13 +48,11 @@ var feedToModel = async (input,inp_sequence,prod_ind) => {
   return Math.floor(quantity[0]*100);
 }
 
-var predict_values = async function(raw_inputs,gcpOutput){
+var predict_values = async function(raw_inputs,gcpOutput,updateNewBool){
   let records = gcpOutput[0];
-  let requestLevelSalesCache = gcpOutput[1].records;
-  let requestLevelSequenceCache = gcpOutput[2].records;
+  let requestLevelCache = gcpOutput[1].records;
   let outputobjs={};
-  let inputSalesMaps = {};
-  let inputSequenceMaps = {};
+  let inputMaps = {};
   for(let record_ind=0;record_ind<records.length;record_ind++){
     let record = records[record_ind];
     let product = record.product;
@@ -108,6 +70,7 @@ var predict_values = async function(raw_inputs,gcpOutput){
           inputObj["seq_inp"]=new_seq_inp;
         }
         inputObj["output"]= await feedToModel(inputObj.input,inputObj.seq_inp,prod_ind);
+        // console.log(inputObj);
       }
       //console.log(inputObj);
       if(inputObj.output!==undefined && inputObj.actual){
@@ -124,29 +87,22 @@ var predict_values = async function(raw_inputs,gcpOutput){
       // console.log("Sequence cache");
       // console.log(Object.keys(requestLevelSequenceCache));
       //Create new sales cache entry
-      if(requestLevelSalesCache[joined_input]===undefined || requestLevelSalesCache[joined_input][product]===undefined){
-        if(inputSalesMaps[joined_input]!==undefined){
-          inputSalesMaps[joined_input][product] = inputObj.output;
+      if(requestLevelCache[joined_input]===undefined || requestLevelCache[joined_input][product]===undefined){
+        if(inputMaps[joined_input]===undefined){
+          inputMaps[joined_input]={};
         }
-        else{
-          inputSalesMaps[joined_input]={};
-          inputSalesMaps[joined_input][product] = inputObj.output;
-        }
-      }
-      // Create new Sequence cache entry
-      if(requestLevelSequenceCache[joined_input]===undefined || requestLevelSequenceCache[joined_input][product]===undefined){
-        if(inputSequenceMaps[joined_input]!==undefined){
-          inputSequenceMaps[joined_input][product] = inputObj.seq_inp;
-        }
-        else{
-          inputSequenceMaps[joined_input]={};
-          inputSequenceMaps[joined_input][product] = inputObj.seq_inp;
-        }
+        inputMaps[joined_input][product]={
+          "input": inputObj.seq_inp,
+          "output": inputObj.output
+        };
       }
     }
   }
-  await gcpUtils.updateNewObjects(inputSalesMaps,'SalesRecord');
-  await gcpUtils.updateNewObjects(inputSequenceMaps,'SequenceInput');
+  // console.log(inputMaps);
+  if(updateNewBool){
+    console.log("Updating");
+    await gcpUtils.updateProductEntries(inputMaps);
+  }
   //Arrange for aggregation
   let outs=[]
   for(let i=0;i<raw_inputs.length;i++){
@@ -271,23 +227,6 @@ var agrregateOutput = function(inputs,outputs,criteria) {
   return finalOutput;
 }
 
-var normalize = function(list_inputs) {
-  tot_inps=[]
-  for(let i=0;i<list_inputs.length;i++){
-    let inputs = list_inputs[i];
-    let new_it=[];
-    new_it.push(inputs[0]/parseFloat(normObj["year"]));
-    new_it.push(inputs[1]/parseFloat(normObj["month"]));
-    new_it.push(inputs[2]/parseFloat(normObj["date"]));
-    new_it.push(inputs[3]/parseFloat(normObj["tod"]));
-    new_it.push(inputs[4]/parseFloat(normObj["branch"]));
-    new_it.push(inputs[5]/parseFloat(normObj["weekday"]));
-    new_it.push(inputs[6]/parseFloat(normObj["ph"]));
-    tot_inps.push(new_it);
-  }
-  return tot_inps;
-}
-
 var addSpecialDays = (inputs, new_Out) => {
   new_Out["holidays"]=[];
   new_Out["weekdays"]={}
@@ -358,18 +297,14 @@ var getProductSet = (catObj) => {
 
 var initializeCounts = () => {
   global.PREDICTIONS = 0;
-  global.SALES_READS = 0;
-  global.SEQUENCE_READS =0;
-  global.SALES_WRITES = 0;
-  global.SEQUENCE_WRITES = 0;
+  global.READS = 0;
+  global.WRITES = 0;
 }
 
 var addCounts = (obj) => {
   obj["predictions"] = global.PREDICTIONS;
-  obj["sales_reads"] = global.SALES_READS;
-  obj["sequence_reads"] = global.SEQUENCE_READS;
-  obj["sales_writes"] = global.SALES_WRITES;
-  obj["sequence_writes"] = global.SEQUENCE_WRITES;
+  obj["reads"] = global.READS;
+  obj["writes"] = global.WRITES;
   return obj;
 }
 
@@ -379,19 +314,25 @@ var runPrediction = async function(inputJson) {
   let products = getProductSet(inputJson.category);
   let result;
   let outputs;
-  let outputResObject = {};
+  let outputResObject = {
+    "branches": []
+  };
   let inputs;
   for(let branch=0;branch<branches.length;branch++){
     inputJson.branch = [branches[branch]];
     inputs = await composeInputs(inputJson);
     //Getting existing records
     let gcpOutput = await gcpUtils.fetchExistingRecords(inputs,products);
-    //console.log(gcpOutput[0]);
-    result = await predict_values(inputs,gcpOutput);
+    // console.log(gcpOutput);
+    result = await predict_values(inputs,gcpOutput,true);
     result = agrregateOutput(inputs,result,inputJson.criteria);
     outputs = addRevenue(result, inputs);
     let finalOut = packageIO(inputs,outputs);
-    outputResObject[branches[branch]] = finalOut;
+    let branchOutput = {
+      "branch": branches[branch],
+      "data:": finalOut
+    }
+    outputResObject["branches"].push(branchOutput);
   }
   outputResObject = addSpecialDays(inputs,outputResObject);
   outputResObject = addCounts(outputResObject);
@@ -418,5 +359,13 @@ const addRevenue = function(outputs) {
 
 
 module.exports = {
-  runPrediction
+  runPrediction,
+  predict_values,
+  composeInputs,
+  agrregateOutput,
+  addRevenue,
+  addSpecialDays,
+  addCounts,
+  initializeCounts,
+  getProductSet
 };
