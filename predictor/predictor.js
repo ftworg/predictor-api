@@ -7,10 +7,16 @@ var item2Key = require('./assets/items.json');
 var holObj = require('./assets/holidays.json');
 var cat2items = require('./assets/cat2item.json');
 var items2cat = require('./assets/item2cat.json');
+var branchesObj = require('./assets/branches.json');
 const { isPublicHoliday, isWeekend, months, range } = require("./utils");
 const fs = require('fs');
 var utils = require("./utils");
 var gcpUtils = require("./gcpUtils");
+
+let id2branch = {};
+Object.keys(branchesObj).forEach((branch) => {
+  id2branch[branchesObj[branch]] = branch;
+});
 
 let check_for_models = async () => {
   if (!global.models) {
@@ -329,8 +335,8 @@ var runPrediction = async function(inputJson) {
     outputs = addRevenue(result, inputs);
     let finalOut = packageIO(inputs,outputs);
     let branchOutput = {
-      "branch": branches[branch],
-      "data:": finalOut
+      "branch": id2branch[branches[branch]],
+      "data": finalOut
     }
     outputResObject["branches"].push(branchOutput);
   }
