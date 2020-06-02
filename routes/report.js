@@ -3,6 +3,7 @@ const router = express.Router();
 const createCsvWriter = require("csv-writer").createArrayCsvWriter;
 const path = require("path");
 const auth = require("../middlewares/auth");
+const fs = require('fs');
 
 router.post("/", auth, async (req, res) => {
   let fields = [];
@@ -22,6 +23,9 @@ router.post("/", auth, async (req, res) => {
     header: fields,
     path: "./reports/report.csv",
   });
+  if (!fs.existsSync('./reports')){
+      fs.mkdirSync('./reports');
+  }
   await csvWriter.writeRecords(csv);
   res.sendFile(path.resolve("./reports/report.csv"));
 });
