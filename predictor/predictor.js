@@ -330,7 +330,7 @@ var runPrediction = async function(inputJson) {
     let finalOut = packageIO(inputs,outputs);
     let branchOutput = {
       "branch": branches[branch],
-      "data:": finalOut
+      "data": finalOut
     }
     outputResObject["branches"].push(branchOutput);
   }
