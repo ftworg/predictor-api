@@ -5,9 +5,19 @@ const fs = require("fs");
 const moment = require("moment");
 const path = require("path");
 const auth = require("../middlewares/auth");
+if (!fs.existsSync('/tmp/upload.json')) {
+  let dt = new Date(Date.now());
+  dt.setDate(dt.getDate()-10);
+  fs.writeFileSync(
+    "/tmp/upload.json",
+    JSON.stringify({
+      last_upload: moment(dt).toObject(),
+    })
+  );
+}
 
 const storage = multer.diskStorage({
-  destination: "./uploads/",
+  destination: "/tmp/",
   filename: function (req, file, cb) {
     cb(null, file.originalname);
   },
@@ -36,7 +46,7 @@ function checkFileType(file, cb) {
 }
 
 router.get("/", (req, res) => {
-  const uploadString = fs.readFileSync("uploads/upload.json", "utf-8");
+  const uploadString = fs.readFileSync("/tmp/upload.json", "utf-8");
   const uploadObj = JSON.parse(uploadString);
 
   const nextUpload = moment(
@@ -54,15 +64,15 @@ router.get("/", (req, res) => {
   let allowUpload = false;
 
   if (
-    nextUpload.years === currentDate.years &&
-    nextUpload.months === currentDate.months &&
-    nextUpload.date === currentDate.date
+    nextUpload.years <= currentDate.years &&
+    nextUpload.months <= currentDate.months &&
+    nextUpload.date <= currentDate.date
   )
     allowUpload = true;
 
   res.send({
     allowUpload: allowUpload,
-    nextUpload: `${nextUpload.date}/${nextUpload.months+1}/${nextUpload.years}`,
+    nextUpload: `${nextUpload.date}/${nextUpload.months}/${nextUpload.years}`,
   });
 });
 
@@ -72,9 +82,9 @@ router.post("/", (req, res) => {
     if (err) {
       res.status(500).send("Server Error");
     } else {
-      fs.unlinkSync(req.file.path);
+      // fs.unlinkSync(req.file.path);
       fs.writeFileSync(
-        "uploads/upload.json",
+        "/tmp/upload.json",
         JSON.stringify({
           last_upload: moment(Date.now()).toObject(),
         })

@@ -5,7 +5,7 @@ const path = require("path");
 const auth = require("../middlewares/auth");
 const fs = require('fs');
 
-router.post("/", auth, async (req, res) => {
+router.post("/", async (req, res) => {
   let fields = [];
   let keys = Object.keys(req.body[0]);
   keys.forEach((key) => {
@@ -21,13 +21,13 @@ router.post("/", auth, async (req, res) => {
   });
   const csvWriter = createCsvWriter({
     header: fields,
-    path: "./reports/report.csv",
+    path: "/tmp/report.csv",
   });
-  if (!fs.existsSync('./reports')){
-      fs.mkdirSync('./reports');
-  }
+  // if (!fs.existsSync('./reports')){
+  //     fs.mkdirSync('./reports');
+  // }
   await csvWriter.writeRecords(csv);
-  res.sendFile(path.resolve("./reports/report.csv"));
+  res.sendFile(path.resolve("/tmp/report.csv"));
 });
 
 module.exports = router;

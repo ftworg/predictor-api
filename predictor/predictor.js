@@ -314,6 +314,23 @@ var addCounts = (obj) => {
   return obj;
 }
 
+var addInsights = (inputs,obj) => {
+  obj.insights = [];
+  inputs.forEach((input)=>{
+    obj.insights.push({
+      "key": inputs.indexOf(input),
+      "year": input[0],
+      "month": input[1],
+      "date": input[2],
+      "tod": input[3],
+      "branch": input[4],
+      "weekday": input[5],
+      "isPublicHoliday": input[6]
+    });
+  });
+  return obj;
+}
+
 var runPrediction = async function(inputJson) {
   initializeCounts();
   let branches = inputJson.branch;
@@ -340,6 +357,7 @@ var runPrediction = async function(inputJson) {
     }
     outputResObject["branches"].push(branchOutput);
   }
+  outputResObject = addInsights(inputs,outputResObject);
   outputResObject = addSpecialDays(inputs,outputResObject);
   outputResObject = addCounts(outputResObject);
   return outputResObject;

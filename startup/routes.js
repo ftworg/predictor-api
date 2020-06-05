@@ -11,6 +11,7 @@ const branches = require("../routes/branch");
 const upload = require("../routes/file-upload");
 const report = require("../routes/report");
 const compare = require("../routes/compare");
+const modelinfo = require("../routes/model");
 
 module.exports = function (app) {
   app.use(express.json({
@@ -31,6 +32,7 @@ module.exports = function (app) {
   app.use("/api/categories", categories);
   app.use("/api/report", report);
   app.use("/api/compare", compare);
+  app.use("/api/model", modelinfo);
 
   app.use(error);
 };
