@@ -23,9 +23,6 @@ router.post("/", async (req, res) => {
     header: fields,
     path: "/tmp/report.csv",
   });
-  // if (!fs.existsSync('./reports')){
-  //     fs.mkdirSync('./reports');
-  // }
   await csvWriter.writeRecords(csv);
   res.sendFile(path.resolve("/tmp/report.csv"));
 });
