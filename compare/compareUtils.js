@@ -4,6 +4,11 @@ var gcpUtils = require("../predictor/gcpUtils");
 var predictor = require("../predictor/predictor.js");
 var branchObj = require("../predictor/assets/branches.json");
 
+let id2branch = {};
+Object.keys(branchObj).forEach((branch) => {
+  id2branch[branchObj[branch]] = branch;
+});
+
 let getActuals = (objs) => {
     let out ={};
     objs.forEach((obj) => {
@@ -165,7 +170,9 @@ let getComparison = async (inputJson) => {
     let products = predictor.getProductSet(inputJson.category);
     let result;
     let outputs;
-    let outputResObject = {};
+    let outputResObject = {
+        "branches": []
+    };
     let inputs;
     for(let branch=0;branch<branches.length;branch++){
         inputJson.branch = [branches[branch]];
@@ -182,9 +189,12 @@ let getComparison = async (inputJson) => {
         outputs = predictor.addRevenue(result, inputs);
         act_outs = predictor.addRevenue(actuals, inputs);
         let finalOut = packageIO(inputs,outputs,act_outs);
-        outputResObject[branches[branch]] = finalOut;
+        let branchOutput = {
+            "branch": id2branch[branches[branch]],
+            "data": finalOut
+          }
+          outputResObject["branches"].push(branchOutput);
     }
-    outputResObject = predictor.addSpecialDays(inputs,outputResObject);
     outputResObject = predictor.addCounts(outputResObject);
     return outputResObject;
 }
