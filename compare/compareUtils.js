@@ -61,19 +61,20 @@ let packageIO = (inputs,outputs,actuals) => {
         new_item["name"] = items[j];
         new_item["super_category"] = items2cat[items[j]].super;
         new_item["sub_category"] = items2cat[items[j]].sub;
-        new_item["predicion"] = {};
+        new_item["quantity"] = 0;
+        new_item["revenue"] = 0;
+        new_item["actual_quantity"] = 0;
+        new_item["actual_revenue"] = 0;
         for(let date_ind=0;date_ind<dates.length;date_ind++){
-            new_item.predicion[dates[date_ind]]={
-                "quantity": quan[dates[date_ind]][items[j]],
-                "revenue": rev[dates[date_ind]][items[j]],
-                "actual_quantity": act_quan[dates[date_ind]][items[j]],
-                "actual_revenue": act_rev[dates[date_ind]][items[j]]
-            }
-            new_item.predicion[dates[date_ind]]["quantity_accuracy"] = (new_item.predicion[dates[date_ind]]["quantity"]/new_item.predicion[dates[date_ind]]["actual_quantity"])*100;
-            new_item.predicion[dates[date_ind]]["quantity_error"] = Math.abs(new_item.predicion[dates[date_ind]]["quantity"]-new_item.predicion[dates[date_ind]]["actual_quantity"]);
-            new_item.predicion[dates[date_ind]]["revenue_accuracy"] = (new_item.predicion[dates[date_ind]]["revenue"]/new_item.predicion[dates[date_ind]]["actual_revenue"])*100;
-            new_item.predicion[dates[date_ind]]["revenue_error"] = Math.abs(new_item.predicion[dates[date_ind]]["revenue"]-new_item.predicion[dates[date_ind]]["actual_revenue"]);
+            new_item["quantity"] += quan[dates[date_ind]][items[j]],
+            new_item["revenue"] += rev[dates[date_ind]][items[j]],
+            new_item["actual_quantity"] += act_quan[dates[date_ind]][items[j]],
+            new_item["actual_revenue"] += act_rev[dates[date_ind]][items[j]]
         }
+        new_item["quantity_accuracy"] = (new_item["quantity"]/new_item["actual_quantity"])*100;
+        new_item["quantity_error"] = Math.abs(new_item["quantity"]-new_item["actual_quantity"]);
+        new_item["revenue_accuracy"] = (new_item["revenue"]/new_item["actual_revenue"])*100;
+        new_item["revenue_error"] = Math.abs(new_item["revenue"]-new_item["actual_revenue"]);
         new_Out.push(new_item);
     }
     return new_Out; 
