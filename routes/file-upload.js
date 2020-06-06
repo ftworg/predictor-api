@@ -56,22 +56,17 @@ router.get("/", (req, res) => {
       uploadObj.last_upload.date
     )
   )
-    .add(1, "week")
-    .toObject();
+    .add(1, "week");
 
-  const currentDate = moment().toObject();
+  const currentDate = moment();
 
   let allowUpload = false;
 
-  if (
-    nextUpload.years <= currentDate.years &&
-    nextUpload.months <= currentDate.months &&
-    nextUpload.date <= currentDate.date
-  )
+  if (nextUpload.isSameOrBefore(currentDate))
     allowUpload = true;
 
   res.send({
-    allowUpload: allowUpload,
+    allowUpload: true,
     nextUpload: `${nextUpload.date}/${nextUpload.months}/${nextUpload.years}`,
   });
 });

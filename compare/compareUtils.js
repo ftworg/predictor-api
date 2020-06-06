@@ -2,6 +2,7 @@ var item2Key = require('../predictor/assets/items.json');
 var items2cat = require('../predictor/assets/item2cat.json');
 var gcpUtils = require("../predictor/gcpUtils");
 var predictor = require("../predictor/predictor.js");
+var branchObj = require("../predictor/assets/branches.json");
 
 let getActuals = (objs) => {
     let out ={};
@@ -78,8 +79,83 @@ let packageIO = (inputs,outputs,actuals) => {
     return new_Out; 
 }
 
-let compareWithUploaded = async () => {
+let parseFileData = (data) => {
+    let aggregatedActuals = {};
+    let branches = [];
+    let products = [];
+    let months = {};
+    let criteria;
+    let keys = Object.keys(data[0]);
+    for(let ind=0;ind<keys.length;ind++){
+        let key = keys[ind];
+        if(key.split('-').length>1){
+            if(key.split(':').length>1){
+                criteria = 2;
+            }
+            else if(key.split('-').length===2){
+                criteria = 1;
+            }
+            else{
+                criteria = 0;
+            }
+            break;
+        }
+    }
+    keys.forEach((key)=>{
+        if(key.split('-').length>1){
+            if(months[key.split('-')[1]]===undefined){
+                months[key.split('-')[1]]=[];
+            }
+            if(key.split('-').length>2){
+                months[key.split('-')[1]].push(key.split('-')[2]);
+            }
+        }
+    });
+    data.forEach((obj)=>{
+        let brind = branchObj[obj.branch];
+        if(branches.indexOf(brind)<0){
+            branches.push(brind);
+        }
+        let prind = Number(obj.key);
+        if(products.indexOf(prind)<0){
+            products.push(prind);
+        }
+        let objKeys = Object.keys(obj);
+        objKeys.forEach((key)=>{
+            if(key.split('-').length>1){
+                if(aggregatedActuals[key]===undefined){
+                    aggregatedActuals[key]={};
+                }
+                aggregatedActuals[key][obj.name] = Number(obj[key]);
+            }
+        });
+    });
+    let inputJson = {
+        "criteria": criteria,
+        "branch": branches,
+        "products": products,
+        "years":[
+            {
+                "year": 2020,
+                "months": []
+            }
+        ]
+    };
+    let mts = Object.keys(months);
+    mts.forEach((mt)=>{
+        inputJson.years[0].months.push({
+            "month": mt,
+            "dates": months[mt]
+        });
+    });
+    return [aggregatedActuals,inputJson];
+}
 
+let compareWithUploaded = async (data) => {
+    [aggregatedActuals,inputJson] = parseFileData(data);
+    console.log(aggregatedActuals);
+    console.log(inputJson);
+    console.log(inputJson.years[0].months[0]);
 }
 
 let getComparison = async (inputJson) => {

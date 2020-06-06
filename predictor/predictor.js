@@ -171,17 +171,18 @@ var composeInputs = async function(input) {
 
 var transformTOD = (input) => {
   let curr_key;
+  let date = input.slice(0,3).join('-');
   if(input[3]===0){
-    curr_key = "00:00 - 06:00"
+    curr_key = date+"\n[00:00 - 06:00]"
   }
   else if(input[3]===1){
-    curr_key = "06:00 - 12:00"
+    curr_key = date+"\n[06:00 - 12:00]"
   }
   else if(input[3]===2){
-    curr_key = "12:00 - 18:00"
+    curr_key = date+"\n[12:00 - 18:00]"
   }
   else if(input[3]===3){
-    curr_key = "18:00 - 24:00"
+    curr_key = date+"\n[18:00 - 24:00]"
   }
   return curr_key;
 }
@@ -350,6 +351,7 @@ var runPrediction = async function(inputJson) {
     result = await predict_values(inputs,gcpOutput,true);
     result = agrregateOutput(inputs,result,inputJson.criteria);
     outputs = addRevenue(result, inputs);
+    // console.log(outputs);
     let finalOut = packageIO(inputs,outputs);
     let branchOutput = {
       "branch": id2branch[branches[branch]],
@@ -358,7 +360,6 @@ var runPrediction = async function(inputJson) {
     outputResObject["branches"].push(branchOutput);
   }
   outputResObject = addInsights(inputs,outputResObject);
-  outputResObject = addSpecialDays(inputs,outputResObject);
   outputResObject = addCounts(outputResObject);
   return outputResObject;
 };
