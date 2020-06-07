@@ -88,7 +88,7 @@ let packageIO = (inputs,outputs,actuals) => {
 let isValidSalesData = (obj) => {
     let keys = Object.keys(obj.records);
     keys.forEach((key)=>{
-        if(obj.records[key]["predicted"]!==undefined){
+        if(obj.records[key]!==undefined && obj.records[key]["predicted"]!==undefined){
             throw new Error("Given input does not have valid sales data"); 
         }
     });
@@ -186,10 +186,10 @@ let compareWithUploaded = async (data) => {
         inputJson.branch = [branches[branch]];
         inputs = await predictor.composeInputs(inputJson);
         //Getting existing records
-        let gcpOutput = await gcpUtils.fetchExistingRecords(inputs,products);
-        // console.log(gcpOutput);
+        let gcpOutput;
         let actuals;
         try{
+            gcpOutput = await gcpUtils.fetchExistingRecords(inputs,products);
             isValidSalesData(gcpOutput[1]);
             actuals = getActuals(gcpOutput[0]);
         }catch(e){
@@ -223,10 +223,10 @@ let getComparison = async (inputJson) => {
         inputJson.branch = [branches[branch]];
         inputs = await predictor.composeInputs(inputJson);
         //Getting existing records
-        let gcpOutput = await gcpUtils.fetchExistingRecords(inputs,products);
-        // console.log(gcpOutput);
+        let gcpOutput;
         let actuals;
         try{
+            gcpOutput = await gcpUtils.fetchExistingRecords(inputs,products);
             isValidSalesData(gcpOutput[1]);
             actuals = getActuals(gcpOutput[0]);
         }catch(e){

@@ -63,6 +63,7 @@ router.post("/custom/", (req, res) => {
             })
             .on('end', async () => {
               console.log('CSV file successfully processed');
+              fs.unlinkSync(req.file.path);
               try{
                 let result = await compareUtils.compareWithUploaded(csv_data);
                 res.send(result);
