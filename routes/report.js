@@ -4,7 +4,6 @@ const createCsvWriter = require("csv-writer").createArrayCsvWriter;
 const path = require("path");
 const auth = require("../middlewares/auth");
 const fs = require('fs');
-const ffmetadata = require('ffmetadata');
 
 router.post("/", async (req, res) => {
   let fields = [];
