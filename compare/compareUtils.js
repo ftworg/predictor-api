@@ -86,7 +86,7 @@ let packageIO = (inputs,outputs,actuals) => {
 }
 
 let parseFileData = (data) => {
-    let aggregatedActuals = {};
+    let aggregatedResults = {};
     let branches = [];
     let products = [];
     let months = {};
@@ -109,11 +109,14 @@ let parseFileData = (data) => {
     }
     keys.forEach((key)=>{
         if(key.split('-').length>1){
-            if(months[key.split('-')[1]]===undefined){
-                months[key.split('-')[1]]=[];
+            let curr_month = Number(key.split('-')[1]);
+            if(months[curr_month]===undefined){
+                months[curr_month]=[];
             }
             if(key.split('-').length>2){
-                months[key.split('-')[1]].push(key.split('-')[2]);
+                let curr_date = Number(key.split('-')[2].split('\n')[0]);
+                if(months[curr_month].indexOf(curr_date)<0)
+                    months[curr_month].push(curr_date);
             }
         }
     });
@@ -129,10 +132,10 @@ let parseFileData = (data) => {
         let objKeys = Object.keys(obj);
         objKeys.forEach((key)=>{
             if(key.split('-').length>1){
-                if(aggregatedActuals[key]===undefined){
-                    aggregatedActuals[key]={};
+                if(aggregatedResults[key]===undefined){
+                    aggregatedResults[key]={};
                 }
-                aggregatedActuals[key][obj.name] = Number(obj[key]);
+                aggregatedResults[key][obj.name] = Number(obj[key]);
             }
         });
     });
@@ -150,18 +153,43 @@ let parseFileData = (data) => {
     let mts = Object.keys(months);
     mts.forEach((mt)=>{
         inputJson.years[0].months.push({
-            "month": mt,
+            "month": Number(mt),
             "dates": months[mt]
         });
     });
-    return [aggregatedActuals,inputJson];
+    return [aggregatedResults,inputJson];
 }
 
 let compareWithUploaded = async (data) => {
-    [aggregatedActuals,inputJson] = parseFileData(data);
-    console.log(aggregatedActuals);
-    console.log(inputJson);
-    console.log(inputJson.years[0].months[0]);
+    predictor.initializeCounts();
+    [aggregatedResults,inputJson] = parseFileData(data);
+    let branches = JSON.parse(JSON.stringify(inputJson.branch));
+    let products = inputJson.products;
+    let outputs;
+    let outputResObject = {
+        "branches": []
+    };
+    let inputs
+    for(let branch=0;branch<branches.length;branch++){
+        inputJson.branch = [branches[branch]];
+        inputs = await predictor.composeInputs(inputJson);
+        console.log(inputs);
+        //Getting existing records
+        let gcpOutput = await gcpUtils.fetchExistingRecords(inputs,products);
+        // console.log(gcpOutput);
+        let actuals = getActuals(gcpOutput[0]);
+        actuals = predictor.agrregateOutput(inputs,actuals,inputJson.criteria);
+        outputs = predictor.addRevenue(aggregatedResults, inputs);
+        act_outs = predictor.addRevenue(actuals, inputs);
+        let finalOut = packageIO(inputs,outputs,act_outs);
+        let branchOutput = {
+            "branch": id2branch[branches[branch]],
+            "data": finalOut
+        }
+        outputResObject["branches"].push(branchOutput);
+    }
+    outputResObject = predictor.addCounts(outputResObject);
+    return outputResObject;
 }
 
 let getComparison = async (inputJson) => {

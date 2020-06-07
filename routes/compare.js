@@ -63,7 +63,6 @@ router.post("/custom/", (req, res) => {
             })
             .on('end', async () => {
               console.log('CSV file successfully processed');
-              console.log(csv_data);
               let result = await compareUtils.compareWithUploaded(csv_data);
               res.send(result);
             });

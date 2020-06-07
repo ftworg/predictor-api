@@ -3,7 +3,7 @@ const datastore = new Datastore();
 const utils = require('./utils');
 const itemObj = require('./assets/rev_items.json');
 
-const TOOMANYREADS = 120;
+const TOOMANYREADS = 500;
 
 let getPreviousInput = (input) => {
     var d = new Date(input[0],input[1]-1,input[2]);

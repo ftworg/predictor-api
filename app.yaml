@@ -1,3 +1,2 @@
 runtime: nodejs12
-env_variables:
-  tp_jwtPrivateKey: "t0S@!"
+instance_class: B2

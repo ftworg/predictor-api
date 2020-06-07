@@ -334,7 +334,7 @@ var addInsights = (inputs,obj) => {
 
 var runPrediction = async function(inputJson) {
   initializeCounts();
-  let branches = inputJson.branch;
+  let branches = JSON.parse(JSON.stringify(inputJson.branch));
   let products = getProductSet(inputJson.category);
   let result;
   let outputs;
