@@ -130,12 +130,15 @@ let parseFileData = (data) => {
             products.push(prind);
         }
         let objKeys = Object.keys(obj);
+        if(aggregatedResults[brind]===undefined){
+            aggregatedResults[brind]={};
+        }
         objKeys.forEach((key)=>{
             if(key.split('-').length>1){
-                if(aggregatedResults[key]===undefined){
-                    aggregatedResults[key]={};
+                if(aggregatedResults[brind][key]===undefined){
+                    aggregatedResults[brind][key]={};
                 }
-                aggregatedResults[key][obj.name] = Number(obj[key]);
+                aggregatedResults[brind][key][obj.name] = Number(obj[key]);
             }
         });
     });
@@ -169,7 +172,7 @@ let compareWithUploaded = async (data) => {
     let outputResObject = {
         "branches": []
     };
-    let inputs
+    let inputs;
     for(let branch=0;branch<branches.length;branch++){
         inputJson.branch = [branches[branch]];
         inputs = await predictor.composeInputs(inputJson);
@@ -178,7 +181,7 @@ let compareWithUploaded = async (data) => {
         // console.log(gcpOutput);
         let actuals = getActuals(gcpOutput[0]);
         actuals = predictor.agrregateOutput(inputs,actuals,inputJson.criteria);
-        outputs = predictor.addRevenue(aggregatedResults, inputs);
+        outputs = predictor.addRevenue(aggregatedResults[branches[branch]], inputs);
         act_outs = predictor.addRevenue(actuals, inputs);
         let finalOut = packageIO(inputs,outputs,act_outs);
         let branchOutput = {
