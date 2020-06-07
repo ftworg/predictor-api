@@ -173,7 +173,6 @@ let compareWithUploaded = async (data) => {
     for(let branch=0;branch<branches.length;branch++){
         inputJson.branch = [branches[branch]];
         inputs = await predictor.composeInputs(inputJson);
-        console.log(inputs);
         //Getting existing records
         let gcpOutput = await gcpUtils.fetchExistingRecords(inputs,products);
         // console.log(gcpOutput);
