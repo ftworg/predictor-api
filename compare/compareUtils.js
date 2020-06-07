@@ -16,7 +16,7 @@ let getActuals = (objs) => {
         let iobjs = obj.objs;
         iobjs.forEach((iobj) => {
             if(iobj.output===undefined){
-                throw new Error("Given date does not have valid sales data");
+                throw new Error("Given input does not have valid sales data");
             }
             let joined_input = iobj.input.join('-');
             if(out[joined_input]===undefined){
@@ -83,6 +83,15 @@ let packageIO = (inputs,outputs,actuals) => {
         new_Out.push(new_item);
     }
     return new_Out; 
+}
+
+let isValidSalesData = (obj) => {
+    let keys = Object.keys(obj.records);
+    keys.forEach((key)=>{
+        if(obj.records[key]["predicted"]!==undefined){
+            throw new Error("Given input does not have valid sales data"); 
+        }
+    });
 }
 
 let parseFileData = (data) => {
@@ -179,7 +188,13 @@ let compareWithUploaded = async (data) => {
         //Getting existing records
         let gcpOutput = await gcpUtils.fetchExistingRecords(inputs,products);
         // console.log(gcpOutput);
-        let actuals = getActuals(gcpOutput[0]);
+        let actuals;
+        try{
+            isValidSalesData(gcpOutput[1]);
+            actuals = getActuals(gcpOutput[0]);
+        }catch(e){
+            throw new Error(e);
+        }
         actuals = predictor.agrregateOutput(inputs,actuals,inputJson.criteria);
         outputs = predictor.addRevenue(aggregatedResults[branches[branch]], inputs);
         act_outs = predictor.addRevenue(actuals, inputs);
@@ -210,7 +225,13 @@ let getComparison = async (inputJson) => {
         //Getting existing records
         let gcpOutput = await gcpUtils.fetchExistingRecords(inputs,products);
         // console.log(gcpOutput);
-        let actuals = getActuals(gcpOutput[0]);
+        let actuals;
+        try{
+            isValidSalesData(gcpOutput[1]);
+            actuals = getActuals(gcpOutput[0]);
+        }catch(e){
+            throw new Error(e);
+        }
         let inputsForPrediction = cleanActuals(gcpOutput[0]);
         gcpOutput[0] = inputsForPrediction;
         result = await predictor.predict_values(inputs,gcpOutput,false);
