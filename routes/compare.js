@@ -13,12 +13,12 @@ router.post("/fly/", async (req, res) => {
     if (error) return res.status(400).send(error.message);
 
     let input = req.body;
-    input.model = 1;
-    const result = await compareUtils.getComparison(input);
-    if (!result)
-        return res.status(500).send("Unable to process. Kindly verify the inputs.");
-
-    res.send(result);
+    try{
+      let result = await compareUtils.getComparison(input);
+      res.send(result);
+    }catch(e){
+      res.status(400).send(e.message);
+    }
 });
 
 const storage = multer.diskStorage({
@@ -63,8 +63,13 @@ router.post("/custom/", (req, res) => {
             })
             .on('end', async () => {
               console.log('CSV file successfully processed');
-              let result = await compareUtils.compareWithUploaded(csv_data);
-              res.send(result);
+              fs.unlinkSync(req.file.path);
+              try{
+                let result = await compareUtils.compareWithUploaded(csv_data);
+                res.send(result);
+              }catch(e){
+                res.status(400).send(e.message);
+              }
             });
         }
       });

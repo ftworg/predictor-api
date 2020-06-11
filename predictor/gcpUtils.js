@@ -31,6 +31,9 @@ let getProductEntries = async (input) => {
 }
 
 let getCachedProductEntries = async (cache,input) => {
+    if(Number.parseInt(input.split('-')[0])<2020){
+        throw new Error("Inputs have dates before 07/01/2020");
+    }
     let records = cache.records;
     let visited = cache.visited;
     if(visited[input]===undefined){
@@ -98,7 +101,7 @@ let updateProductEntries = async (obj) => {
 let fetchExistingRecords = async (inputs,products) => {
     for(let pr_i=0;pr_i<inputs.length;pr_i++){
         if(inputs[pr_i][0]<2020){
-            throw new Error("Inputs not in desired range");
+            throw new Error("Inputs have dates before 07/01/2020");
         }
     }
     let recordObjects = [];

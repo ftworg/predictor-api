@@ -11,11 +11,12 @@ router.post("/", async (req, res) => {
 
   let input = req.body;
   input.model = 1;
-  const result = await runPrediction(input);
-  if (!result)
-    return res.status(500).send("Unable to process. Kindly verify the inputs.");
-
-  res.send(result);
+  try{
+    const result = await runPrediction(input);
+    res.send(result);
+  }catch(e){
+    res.status(400).send(e.message);
+  }
 });
 
 function validate(req) {

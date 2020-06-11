@@ -346,7 +346,12 @@ var runPrediction = async function(inputJson) {
     inputJson.branch = [branches[branch]];
     inputs = await composeInputs(inputJson);
     //Getting existing records
-    let gcpOutput = await gcpUtils.fetchExistingRecords(inputs,products);
+    let gcpOutput;
+    try{
+      gcpOutput = await gcpUtils.fetchExistingRecords(inputs,products);
+    }catch(e){
+      throw new Error(e);
+    }
     // console.log(gcpOutput);
     result = await predict_values(inputs,gcpOutput,true);
     result = agrregateOutput(inputs,result,inputJson.criteria);
