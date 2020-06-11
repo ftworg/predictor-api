@@ -16,7 +16,7 @@ let getActuals = (objs) => {
         let iobjs = obj.objs;
         iobjs.forEach((iobj) => {
             if(iobj.output===undefined){
-                throw new Error("Given date does not have valid sales data");
+                throw new Error("Given input does not have valid sales data");
             }
             let joined_input = iobj.input.join('-');
             if(out[joined_input]===undefined){
@@ -85,6 +85,15 @@ let packageIO = (inputs,outputs,actuals) => {
     return new_Out; 
 }
 
+let isValidSalesData = (obj) => {
+    let keys = Object.keys(obj.records);
+    keys.forEach((key)=>{
+        if(obj.records[key]!==undefined && obj.records[key]["predicted"]!==undefined){
+            throw new Error("Given input does not have valid sales data"); 
+        }
+    });
+}
+
 let parseFileData = (data) => {
     let aggregatedResults = {};
     let branches = [];
@@ -130,12 +139,15 @@ let parseFileData = (data) => {
             products.push(prind);
         }
         let objKeys = Object.keys(obj);
+        if(aggregatedResults[brind]===undefined){
+            aggregatedResults[brind]={};
+        }
         objKeys.forEach((key)=>{
             if(key.split('-').length>1){
-                if(aggregatedResults[key]===undefined){
-                    aggregatedResults[key]={};
+                if(aggregatedResults[brind][key]===undefined){
+                    aggregatedResults[brind][key]={};
                 }
-                aggregatedResults[key][obj.name] = Number(obj[key]);
+                aggregatedResults[brind][key][obj.name] = Number(obj[key]);
             }
         });
     });
@@ -169,17 +181,22 @@ let compareWithUploaded = async (data) => {
     let outputResObject = {
         "branches": []
     };
-    let inputs
+    let inputs;
     for(let branch=0;branch<branches.length;branch++){
         inputJson.branch = [branches[branch]];
         inputs = await predictor.composeInputs(inputJson);
-        console.log(inputs);
         //Getting existing records
-        let gcpOutput = await gcpUtils.fetchExistingRecords(inputs,products);
-        // console.log(gcpOutput);
-        let actuals = getActuals(gcpOutput[0]);
+        let gcpOutput;
+        let actuals;
+        try{
+            gcpOutput = await gcpUtils.fetchExistingRecords(inputs,products);
+            isValidSalesData(gcpOutput[1]);
+            actuals = getActuals(gcpOutput[0]);
+        }catch(e){
+            throw new Error(e);
+        }
         actuals = predictor.agrregateOutput(inputs,actuals,inputJson.criteria);
-        outputs = predictor.addRevenue(aggregatedResults, inputs);
+        outputs = predictor.addRevenue(aggregatedResults[branches[branch]], inputs);
         act_outs = predictor.addRevenue(actuals, inputs);
         let finalOut = packageIO(inputs,outputs,act_outs);
         let branchOutput = {
@@ -206,9 +223,15 @@ let getComparison = async (inputJson) => {
         inputJson.branch = [branches[branch]];
         inputs = await predictor.composeInputs(inputJson);
         //Getting existing records
-        let gcpOutput = await gcpUtils.fetchExistingRecords(inputs,products);
-        // console.log(gcpOutput);
-        let actuals = getActuals(gcpOutput[0]);
+        let gcpOutput;
+        let actuals;
+        try{
+            gcpOutput = await gcpUtils.fetchExistingRecords(inputs,products);
+            isValidSalesData(gcpOutput[1]);
+            actuals = getActuals(gcpOutput[0]);
+        }catch(e){
+            throw new Error(e);
+        }
         let inputsForPrediction = cleanActuals(gcpOutput[0]);
         gcpOutput[0] = inputsForPrediction;
         result = await predictor.predict_values(inputs,gcpOutput,false);

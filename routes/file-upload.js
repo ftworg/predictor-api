@@ -34,7 +34,6 @@ function checkFileType(file, cb) {
   const filetypes = /csv|octet-stream/;
 
   const extName = filetypes.test(path.extname(file.originalname).toLowerCase());
-  console.log(file);
 
   const mimetype = filetypes.test(file.mimetype);
 
@@ -49,7 +48,7 @@ router.get("/", (req, res) => {
   const uploadString = fs.readFileSync("/tmp/upload.json", "utf-8");
   const uploadObj = JSON.parse(uploadString);
 
-  const nextUpload = moment(
+  let nextUpload = moment(
     new Date(
       uploadObj.last_upload.years,
       uploadObj.last_upload.months,
@@ -65,9 +64,10 @@ router.get("/", (req, res) => {
   if (nextUpload.isSameOrBefore(currentDate))
     allowUpload = true;
 
+  nextUpload = nextUpload.toObject();
   res.send({
-    allowUpload: true,
-    nextUpload: `${nextUpload.date}/${nextUpload.months}/${nextUpload.years}`,
+    allowUpload: allowUpload,
+    nextUpload: `${nextUpload.date}/${nextUpload.months+1}/${nextUpload.years}`,
   });
 });
 
@@ -77,7 +77,7 @@ router.post("/", (req, res) => {
     if (err) {
       res.status(500).send("Server Error");
     } else {
-      // fs.unlinkSync(req.file.path);
+      fs.unlinkSync(req.file.path);
       fs.writeFileSync(
         "/tmp/upload.json",
         JSON.stringify({
