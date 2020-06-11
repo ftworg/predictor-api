@@ -106,7 +106,7 @@ var predict_values = async function(raw_inputs,gcpOutput,updateNewBool){
   }
   // console.log(inputMaps);
   if(updateNewBool){
-    console.log("Updating");
+    // console.log("Updating");
     await gcpUtils.updateProductEntries(inputMaps);
   }
   //Arrange for aggregation
