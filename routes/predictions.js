@@ -5,16 +5,16 @@ const Joi = require("@hapi/joi");
 const auth = require("../middlewares/auth");
 const { runPrediction } = require("../predictor/predictor");
 
-router.post("/", async (req, res) => {
+router.post("/", auth, async (req, res) => {
   const { error } = validate(req.body);
   if (error) return res.status(400).send(error.message);
 
   let input = req.body;
   input.model = 1;
-  try{
+  try {
     const result = await runPrediction(input);
     res.send(result);
-  }catch(e){
+  } catch (e) {
     res.status(400).send(e.message);
   }
 });

@@ -3,9 +3,8 @@ const router = express.Router();
 const createCsvWriter = require("csv-writer").createArrayCsvWriter;
 const path = require("path");
 const auth = require("../middlewares/auth");
-const fs = require('fs');
 
-router.post("/", async (req, res) => {
+router.post("/", auth, async (req, res) => {
   let fields = [];
   let keys = Object.keys(req.body[0]);
   keys.forEach((key) => {

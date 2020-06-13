@@ -1,9 +1,10 @@
 const express = require("express");
 const app = express();
+const admin = require("firebase-admin");
 
 require("express-async-errors");
+require("./startup/auth")(admin);
 require("./startup/routes")(app);
-require("./startup/config")();
 
 // app.use(express.static("/tmp/"));
 
