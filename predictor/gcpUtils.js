@@ -101,7 +101,7 @@ let updateProductEntries = async (obj) => {
 let fetchExistingRecords = async (inputs,products) => {
     for(let pr_i=0;pr_i<inputs.length;pr_i++){
         if(inputs[pr_i][0]<2020){
-            throw new Error("Inputs have dates before 07/01/2020");
+            throw new Error("Inputs have dates before 01/01/2020");
         }
     }
     let recordObjects = [];
