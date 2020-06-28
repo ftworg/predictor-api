@@ -1,11 +1,10 @@
 const express = require("express");
 const router = express.Router();
 // const cache = require("../middlewares/cache");
-const Joi = require("@hapi/joi");
 const auth = require("../middlewares/auth");
 const categories = require("../predictor/assets/cat2item.json");
 
-router.get("/", async (req, res) => {
+router.get("/", auth, async (req, res) => {
   let result = [];
   if (!categories) {
     return res.status(500).send("Unable to process. Kindly verify the inputs.");

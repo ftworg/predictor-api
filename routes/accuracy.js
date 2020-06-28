@@ -4,9 +4,10 @@ const router = express.Router();
 const Joi = require("@hapi/joi");
 const auth = require("../middlewares/auth");
 const accuracy = require("../predictor/assets/accuracy.json");
+const items2cat = require("../predictor/assets/item2cat.json");
 const items2cat = require('../predictor/assets/item2cat.json');
 
-router.get("/", async (req, res) => {
+router.get("/", auth, async (req, res) => {
   let result = {};
   if (!result) {
     return res.status(500).send("Unable to process. Kindly verify the inputs.");

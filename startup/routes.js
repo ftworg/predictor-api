@@ -1,8 +1,6 @@
 const morgan = require("morgan");
 const express = require("express");
 const error = require("../middlewares/error");
-const users = require("../routes/users");
-const auth = require("../routes/auth");
 const cors = require("cors");
 const predictions = require("../routes/predictions");
 const accuracy = require("../routes/accuracy");
@@ -14,19 +12,19 @@ const compare = require("../routes/compare");
 const modelinfo = require("../routes/model");
 
 module.exports = function (app) {
-  app.use(express.json({
-    limit: '50mb'
-  }));
+  app.use(
+    express.json({
+      limit: "50mb",
+    })
+  );
   app.use(cors());
 
   if (app.get("env") === "development") {
     app.use(morgan("tiny"));
   }
 
-  app.use("/api/auth", auth);
   app.use("/api/branches", branches);
   app.use("/api/upload", upload);
-  app.use("/api/users", users);
   app.use("/api/predict", predictions);
   app.use("/api/accuracy", accuracy);
   app.use("/api/categories", categories);
