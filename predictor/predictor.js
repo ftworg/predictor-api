@@ -25,10 +25,10 @@ let check_for_models = async () => {
     for(let i=modelObj["START"];i<modelObj["END"];i++){
       let t =  Date.now();
       let z_model = await tf.loadLayersModel(
-        "file://predictor/models/prod"+String(i+1)+"/0/model.json"
+        "file://predictor/models/prod_"+String(i+1)+"/0/model/bin/model.json"
       );
       let nz_model = await tf.loadLayersModel(
-        "file://predictor/models/prod"+String(i+1)+"/1/model.json"
+        "file://predictor/models/prod_"+String(i+1)+"/1/model/bin/model.json"
       );      
       models.push({
         z_model,
@@ -36,7 +36,7 @@ let check_for_models = async () => {
       });
     }
     global.models = models;
-    //console.log("Models loaded! ")
+    console.log("Models loaded! ")
   }
 }
 
@@ -57,6 +57,7 @@ var feedToModel = async (input,inp_sequence,prod_ind) => {
     context_tensors[2],
     context_tensors[3]]);
   output = output.dataSync()[0];
+  // console.log(output);
   if(output<=0.5){
     output=0;
   }
@@ -69,9 +70,11 @@ var feedToModel = async (input,inp_sequence,prod_ind) => {
       context_tensors[1],
       context_tensors[2],
       context_tensors[3]]);
+    output = output.dataSync()[0];
+    // console.log("non_zero");
+    // console.log(output);
   }
-  var quantity = output.dataSync();
-  return Math.floor(quantity[0]*100);
+  return Math.floor(output*10);
 }
 
 var predict_values = async function(raw_inputs,gcpOutput,updateNewBool){
@@ -369,6 +372,7 @@ var runPrediction = async function(inputJson) {
     let gcpOutput;
     try{
       gcpOutput = await gcpUtils.fetchExistingRecords(inputs,products);
+      // console.log(gcpOutput);
     }catch(e){
       throw new Error(e);
     }
@@ -417,5 +421,6 @@ module.exports = {
   addSpecialDays,
   addCounts,
   initializeCounts,
-  getProductSet
+  getProductSet,
+  check_for_models
 };

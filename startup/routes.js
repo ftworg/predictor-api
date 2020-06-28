@@ -33,6 +33,5 @@ module.exports = function (app) {
   app.use("/api/report", report);
   app.use("/api/compare", compare);
   app.use("/api/model", modelinfo);
-
   app.use(error);
 };

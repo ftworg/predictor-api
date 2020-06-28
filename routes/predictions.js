@@ -15,6 +15,7 @@ router.post("/", async (req, res) => {
     const result = await runPrediction(input);
     res.send(result);
   }catch(e){
+    console.log(e);
     res.status(400).send(e.message);
   }
 });

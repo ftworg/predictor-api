@@ -14,7 +14,6 @@
     "@hapi/joi": "^17.1.0",
     "@tensorflow/tfjs": "^1.5.2",
     "@tensorflow/tfjs-node": "^1.5.2",
-    "array-average": "^0.1.2",
     "bcrypt": "^3.0.8",
     "config": "^3.2.5",
     "cors": "^2.8.5",
