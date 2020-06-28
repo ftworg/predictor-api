@@ -14,7 +14,6 @@
     "@hapi/joi": "^17.1.0",
     "@tensorflow/tfjs": "^2.0.0",
     "@tensorflow/tfjs-node": "^2.0.0",
-    "array-average": "^0.1.2",
     "config": "^3.2.5",
     "cors": "^2.8.5",
     "csv-parser": "^2.3.2",

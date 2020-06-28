@@ -24,13 +24,19 @@ let check_for_models = async () => {
     models=[];
     for(let i=modelObj["START"];i<modelObj["END"];i++){
       let t =  Date.now();
-      model = await tf.loadLayersModel(
-        "file://predictor/models/model_"+String(i+1)+"/model.json"
+      let z_model = await tf.loadLayersModel(
+        "file://predictor/models/prod_"+String(i+1)+"/0/model/bin/model.json"
       );
-      models.push(model);
+      let nz_model = await tf.loadLayersModel(
+        "file://predictor/models/prod_"+String(i+1)+"/1/model/bin/model.json"
+      );      
+      models.push({
+        z_model,
+        nz_model
+      });
     }
     global.models = models;
-    //console.log("Models loaded! ")
+    console.log("Models loaded! ")
   }
 }
 
@@ -45,13 +51,30 @@ var feedToModel = async (input,inp_sequence,prod_ind) => {
   for(let i=3;i<input.length;i++){
     context_tensors.push(tf.tensor([input[i]]))
   }
-  var output = await global.models[prod_ind].predict([seq_inp_tensor,
+  var output = await global.models[prod_ind].z_model.predict([seq_inp_tensor,
     context_tensors[0],
     context_tensors[1],
     context_tensors[2],
     context_tensors[3]]);
-  var quantity = output.dataSync();
-  return Math.floor(quantity[0]*100);
+  output = output.dataSync()[0];
+  // console.log(output);
+  if(output<=0.5){
+    output=0;
+  }
+  else{
+    output=1;
+  }
+  if(output===1){
+    output = await global.models[prod_ind].nz_model.predict([seq_inp_tensor,
+      context_tensors[0],
+      context_tensors[1],
+      context_tensors[2],
+      context_tensors[3]]);
+    output = output.dataSync()[0];
+    // console.log("non_zero");
+    // console.log(output);
+  }
+  return Math.floor(output*10);
 }
 
 var predict_values = async function(raw_inputs,gcpOutput,updateNewBool){
@@ -106,7 +129,7 @@ var predict_values = async function(raw_inputs,gcpOutput,updateNewBool){
   }
   // console.log(inputMaps);
   if(updateNewBool){
-    console.log("Updating");
+    // console.log("Updating");
     await gcpUtils.updateProductEntries(inputMaps);
   }
   //Arrange for aggregation
@@ -349,6 +372,7 @@ var runPrediction = async function(inputJson) {
     let gcpOutput;
     try{
       gcpOutput = await gcpUtils.fetchExistingRecords(inputs,products);
+      // console.log(gcpOutput);
     }catch(e){
       throw new Error(e);
     }
@@ -397,5 +421,6 @@ module.exports = {
   addSpecialDays,
   addCounts,
   initializeCounts,
-  getProductSet
+  getProductSet,
+  check_for_models
 };

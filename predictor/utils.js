@@ -1,5 +1,58 @@
 const fs = require('fs');
 var ph = require("./assets/holidays.json");
+const branchObj = require("./assets/branches.json");
+const cat = require("./assets/cat2item.json");
+const { all } = require('@tensorflow/tfjs');
+
+const getAllInputs = () => {
+  let today = new Date(Date.now());
+  let mon = {};
+  let branches = Object.values(branchObj);
+  let super_cats = Object.keys(cat);
+  let sup2sub = {};
+  super_cats.forEach((super_cat)=>{
+    let sub_cats = Object.keys(cat[super_cat]);
+    sup2sub[super_cat]=sub_cats;
+  });
+  for(let i=0;i<2;i++){
+    let nextDay = getNextDay(today);
+    today = nextDay;
+    let month = nextDay.getMonth()+1;
+    if(mon[month]===undefined){
+      mon[month] = [nextDay.getDate()];
+    }
+    else{
+      mon[month].push(nextDay.getDate());
+    }
+  }
+  let all_inputs={
+    "category": [],
+    "months": [],
+    branches
+  };
+
+  Object.keys(mon).forEach((m)=>{
+    all_inputs.months.push({
+      "month": m,
+      "dates": mon[m]
+    });
+  });
+
+  Object.keys(sup2sub).forEach((sup)=>{
+    all_inputs.category.push({
+      "super": sup,
+      "sub": sup2sub[sup]
+    });
+  });
+  
+  return all_inputs;
+}
+
+const getNextDay = (today) => {
+  let nextDay = today;
+  nextDay.setDate(nextDay.getDate()+1);
+  return nextDay;
+}
 
 const isWeekend = (date, month, year) => {
   let d = new Date(year,month,date);
@@ -137,5 +190,6 @@ module.exports = {
   range,
   get_seq_inputs,
   dice_outputs,
-  get_context_input
+  get_context_input,
+  getAllInputs
 };

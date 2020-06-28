@@ -32,7 +32,7 @@ let getProductEntries = async (input) => {
 
 let getCachedProductEntries = async (cache,input) => {
     if(Number.parseInt(input.split('-')[0])<2020){
-        throw new Error("Inputs have dates before 07/01/2020");
+        throw new Error("Inputs have dates before 01/01/2020");
     }
     let records = cache.records;
     let visited = cache.visited;
@@ -101,7 +101,7 @@ let updateProductEntries = async (obj) => {
 let fetchExistingRecords = async (inputs,products) => {
     for(let pr_i=0;pr_i<inputs.length;pr_i++){
         if(inputs[pr_i][0]<2020){
-            throw new Error("Inputs have dates before 07/01/2020");
+            throw new Error("Inputs have dates before 01/01/2020");
         }
     }
     let recordObjects = [];
@@ -114,13 +114,11 @@ let fetchExistingRecords = async (inputs,products) => {
         let product = itemObj[String(prod)];
         let inputObjs=[];
         // console.log(product);
-        // //console.log(Object.keys(requestLevelSalesCache.records).length);
-        // //console.log(Object.keys(requestLevelSequenceCache.records).length);
         let curr_inp = inputs[0].join('-');
         let curr_out = await getCachedProductEntries(requestLevelCache,curr_inp);
         // //console.log(curr_out[product]);
         if(curr_out && curr_out[product] && curr_out[product]["input"]!==undefined && curr_out[product]["output"]!==undefined){
-            //console.log("got record");
+            // console.log("got record");
             let inputObj = {
                 "input": inputs[0],
                 "seq_inp": curr_out[product]["input"],
@@ -144,11 +142,11 @@ let fetchExistingRecords = async (inputs,products) => {
                 if(reads==tooManyreads){
                     throw new Error("Too many GCP reads");
                 }
-                //console.log(prev_inp);
+                // console.log(prev_inp);
                 toBeinputs.push(prev_inp);
                 prev_inp = getPreviousInput(prev_inp);
                 joined_prev_inp  = prev_inp.join('-');
-                //console.log(joined_prev_inp);
+                // console.log(joined_prev_inp);
                 curr_out = await getCachedProductEntries(requestLevelCache,joined_prev_inp);
                 seq_inp = curr_out && curr_out[product] && curr_out[product]["input"]!==undefined ? curr_out[product]["input"] : undefined;
                 prod_quan = curr_out && curr_out[product] && curr_out[product]["output"]!==undefined ? curr_out[product]["output"] : undefined;
