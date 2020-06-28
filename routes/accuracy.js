@@ -5,7 +5,6 @@ const Joi = require("@hapi/joi");
 const auth = require("../middlewares/auth");
 const accuracy = require("../predictor/assets/accuracy.json");
 const items2cat = require("../predictor/assets/item2cat.json");
-const items2cat = require('../predictor/assets/item2cat.json');
 
 router.get("/", auth, async (req, res) => {
   let result = {};
