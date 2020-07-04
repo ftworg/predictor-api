@@ -1,11 +1,10 @@
 const {Datastore} = require('@google-cloud/datastore');
 const datastore = new Datastore();
-const utils = require('../predictor/utils');
-const itemObj = require('/tmp/tenant-001/assets/rev_items.json');
 
 const TOOMANYREADS = 500;
 
 let getPreviousInput = (input) => {
+    const utils = require('../predictor/utils');
     var d = new Date(input[0],input[1]-1,input[2]);
     var tod = input[3];
     if(tod==1){
@@ -111,6 +110,7 @@ let updateProductEntries = async (obj) => {
 }
 
 let fetchExistingRecords = async (inputs,products) => {
+    const itemObj = require('/tmp/tenant-001/assets/rev_items.json');
     for(let pr_i=0;pr_i<inputs.length;pr_i++){
         if(inputs[pr_i][0]<2020){
             throw new Error("Inputs have dates before 01/01/2020");

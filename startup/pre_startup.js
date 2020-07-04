@@ -1,13 +1,12 @@
-const { runPrediction } = require('../predictor/predictor');
-const { getAllInputs } = require('../predictor/utils');
-const load_model = require('../predictor/predictor').check_for_models;
-const datastoreUtils = require('../cloud/datastoreUtils');
-const bucketUtils = require('../cloud/bucketUtils');
-
 const startupScript = async () => {
+    const datastoreUtils = require('../cloud/datastoreUtils');
+    const bucketUtils = require('../cloud/bucketUtils');
     const MM = await datastoreUtils.getModelMetadata('Tosai');
     await bucketUtils.downloadAssetsFromBucket(MM.BucketName);
     await bucketUtils.downloadAndExtractModels(MM.BucketName);
+    const { runPrediction } = require('../predictor/predictor');
+    const { getAllInputs } = require('../predictor/utils');
+    const load_model = require('../predictor/predictor').check_for_models;
     await load_model();
     const allInputs = getAllInputs();
     const inputObj = {
