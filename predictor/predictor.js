@@ -1,17 +1,18 @@
 var tf = require("@tensorflow/tfjs-node");
-var itemsObj = require("./assets/rev_items.json");
-var normObj = require('./assets/norm.json');
-var pricesObj = require('./assets/prices.json');
-var modelObj = require('./assets/models.json');
-var item2Key = require('./assets/items.json');
-var holObj = require('./assets/holidays.json');
-var cat2items = require('./assets/cat2item.json');
-var items2cat = require('./assets/item2cat.json');
-var branchesObj = require('./assets/branches.json');
+var itemsObj = require("/tmp/tenant-001/assets/rev_items.json");
+var normObj = require('/tmp/tenant-001/assets/norm.json');
+var pricesObj = require('/tmp/tenant-001/assets/prices.json');
+var modelObj = require('/tmp/tenant-001/assets/models.json');
+var item2Key = require('/tmp/tenant-001/assets/items.json');
+var holObj = require('/tmp/tenant-001/assets/holidays.json');
+var cat2items = require('/tmp/tenant-001/assets/cat2item.json');
+var items2cat = require('/tmp/tenant-001/assets/item2cat.json');
+var branchesObj = require('/tmp/tenant-001/assets/branches.json');
 const { isPublicHoliday, isWeekend, months, range } = require("./utils");
 const fs = require('fs');
 var utils = require("./utils");
-var gcpUtils = require("./gcpUtils");
+var gcpUtils = require("../cloud/datastoreUtils");
+const url = require('url');
 
 let id2branch = {};
 Object.keys(branchesObj).forEach((branch) => {
@@ -25,10 +26,10 @@ let check_for_models = async () => {
     for(let i=modelObj["START"];i<modelObj["END"];i++){
       let t =  Date.now();
       let z_model = await tf.loadLayersModel(
-        "file://predictor/models/prod_"+String(i+1)+"/0/model/bin/model.json"
+        "file:///tmp/tenant-001/models/prod_"+String(i+1)+"/0/model/bin/model.json"
       );
       let nz_model = await tf.loadLayersModel(
-        "file://predictor/models/prod_"+String(i+1)+"/1/model/bin/model.json"
+        "file:///tmp/tenant-001/models/prod_"+String(i+1)+"/1/model/bin/model.json"
       );      
       models.push({
         z_model,

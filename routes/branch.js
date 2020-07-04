@@ -2,10 +2,7 @@ const express = require("express");
 const router = express.Router();
 const fs = require("fs");
 const auth = require("../middlewares/auth");
-
-const jsonString = fs.readFileSync("predictor/assets/branches.json", "utf-8");
-
-const jsonObj = JSON.parse(jsonString);
+var jsonObj = require('/tmp/tenant-001/assets/branches.json');
 
 const branches = Object.keys(jsonObj).map((value, index) => {
   return { key: index + 1, name: value };

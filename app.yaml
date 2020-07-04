@@ -1,8 +1,8 @@
 service: default
 runtime: nodejs12
-instance_class: B2
-basic_scaling:
+instance_class: B4
+automatic_scaling:
   max_instances: 5
-  idle_timeout: 10m
+  min_instances: 1
 env_variables:
   tp_jwtPrivateKey: "t0S@!"

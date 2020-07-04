@@ -11,7 +11,7 @@ router.post("/", auth, async (req, res) => {
 
   let input = req.body;
   input.model = 1;
-  try {
+  try{
     const result = await runPrediction(input);
     res.send(result);
   }catch(e){
