@@ -34,6 +34,7 @@ const downloadAssetsFromBucket = async (bucketName) =>{
     
         // Downloads the file
         await storage.bucket(bucketName).file(srcDirName+fn).download(options);
+        console.log("Asset Downloaded");
     });
 }
 
