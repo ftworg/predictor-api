@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 // const cache = require("../middlewares/cache");
 const auth = require("../middlewares/auth");
-const categories = require("../predictor/assets/cat2item.json");
+const categories = require("/tmp/tenant-001/assets/cat2item.json");
 
 router.get("/", auth, async (req, res) => {
   let result = [];
