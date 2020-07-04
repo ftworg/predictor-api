@@ -1,6 +1,6 @@
 service: default
 runtime: nodejs12
-instance_class: B4
+instance_class: B4_1G
 manual_scaling:
   instances: 1
 env_variables:
