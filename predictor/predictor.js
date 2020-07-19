@@ -536,5 +536,6 @@ module.exports = {
   addCounts,
   initializeCounts,
   getProductSet,
-  check_for_models
+  check_for_models,
+  runUniversalPrediction
 };
