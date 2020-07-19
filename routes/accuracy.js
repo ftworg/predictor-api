@@ -3,8 +3,9 @@ const router = express.Router();
 // const cache = require("../middlewares/cache");
 const Joi = require("@hapi/joi");
 const auth = require("../middlewares/auth");
-const accuracy = require("/tmp/tenant-001/assets/accuracy.json");
-const items2cat = require("/tmp/tenant-001/assets/item2cat.json");
+// const accuracy = require("/tmp/tenant-001/assets/accuracy.json");
+const accuracy = global.ASSETS['001']['accuracy'];
+const items2cat = global.ASSETS['001']['item2cat'];
 
 router.get("/", auth, async (req, res) => {
   let result = {};

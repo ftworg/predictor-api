@@ -1,7 +1,7 @@
 const fs = require('fs');
-var ph = require("/tmp/tenant-001/assets/holidays.json");
-const branchObj = require("/tmp/tenant-001/assets/branches.json");
-const cat = require("/tmp/tenant-001/assets/cat2item.json");
+var ph = global.ASSETS['001']['holidays'];
+const branchObj = global.ASSETS['001']['branches'];
+const cat = global.ASSETS['001']['cat2item'];
 const { all } = require('@tensorflow/tfjs');
 
 const getAllInputs = () => {

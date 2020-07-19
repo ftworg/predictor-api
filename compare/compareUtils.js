@@ -1,8 +1,8 @@
-var item2Key = require('/tmp/tenant-001/assets/items.json');
-var items2cat = require('/tmp/tenant-001/assets/item2cat.json');
+var item2Key = global.ASSETS['001']['items'];
+var items2cat = global.ASSETS['001']['item2cat'];
 var gcpUtils = require("../cloud/datastoreUtils.js");
 var predictor = require("../predictor/predictor.js");
-var branchObj = require("/tmp/tenant-001/assets/branches.json");
+var branchObj = global.ASSETS['001']['branches'];
 
 let id2branch = {};
 Object.keys(branchObj).forEach((branch) => {

@@ -12,5 +12,6 @@ startupScripts().then(()=>{
     require("./startup/routes")(app);
     app.listen(PORT, () => console.log(`Listening to port ${PORT}`));
 }).catch((e)=>{
+    console.log(e);
     throw new Error(e);
 });
