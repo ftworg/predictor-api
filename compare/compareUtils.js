@@ -234,7 +234,7 @@ let getComparison = async (inputJson) => {
         }
         let inputsForPrediction = cleanActuals(gcpOutput[0]);
         gcpOutput[0] = inputsForPrediction;
-        result = await predictor.predict_values(inputs,gcpOutput,false);
+        result = await predictor.runUniversalPrediction(inputs,gcpOutput,false);
         result = predictor.agrregateOutput(inputs,result,inputJson.criteria);
         actuals = predictor.agrregateOutput(inputs,actuals,inputJson.criteria);
         outputs = predictor.addRevenue(result, inputs);

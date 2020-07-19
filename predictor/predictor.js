@@ -491,7 +491,7 @@ var runPrediction = async function(inputJson) {
       throw new Error(e);
     }
     // console.log(gcpOutput);
-    result = await runUniversalPrediction(inputs,gcpOutput,false);
+    result = await runUniversalPrediction(inputs,gcpOutput,true);
     result = agrregateOutput(inputs,result,inputJson.criteria);
     outputs = addRevenue(result, inputs);
     // console.log(outputs);
