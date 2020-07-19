@@ -1,7 +1,7 @@
 const {Storage} = require('@google-cloud/storage');
 const storage = new Storage();
 const fs = require('fs');
-const extract = require('extract-zip')
+const extract = require('extract-zip');
 
 const downloadAssetsFromBucket = async (bucketName) =>{
     const srcDirName = 'assets/'
@@ -15,7 +15,9 @@ const downloadAssetsFromBucket = async (bucketName) =>{
         'models.json',
         'norm.json',
         'prices.json',
-        'rev_items.json'
+        'rev_items.json',
+        'id2cat.json',
+        'cat2id.json'
     ];
     let destDirname = '/tmp/'+bucketName;
     let exists = fs.existsSync(destDirname)
@@ -59,8 +61,8 @@ const downloadAndExtractModels = async (bucketName) => {
     await storage.bucket(bucketName).file(srcDirName).download(options);
     console.log("Extracting...");
     try {
-        await extract(destDirname+srcDirName, { dir: rootDirName })
-        console.log('Extraction complete')
+        await extract(destDirname+srcDirName, { dir: rootDirName });
+        console.log('Extraction complete');
     } catch (err) {
         // handle any errors
     }

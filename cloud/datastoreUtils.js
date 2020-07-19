@@ -41,6 +41,26 @@ let getProductEntries = async (input) => {
     }
 }
 
+let getAssetsFromGCP = async (tenant) => {
+    global.READS = global.READS + 1;
+    const query = datastore.createQuery('Assets').filter('Client',tenant);  
+    const [records] = await datastore.runQuery(query);
+    let res = records[0] && records[0].Data ? records[0].Data : undefined;
+    try{
+        return JSON.parse(res);
+    }catch(e){
+        console.log(e);
+        return undefined;
+    }
+}
+
+let getCachedAssets = async (tenant) => {
+    if(global.ASSETS[tenant]===undefined){
+        global.ASSETS[tenant] = await getAssetsFromGCP(tenant);
+    }
+    return global.ASSETS[tenant];
+}
+
 let getCachedProductEntries = async (cache,input) => {
     if(Number.parseInt(input.split('-')[0])<2020){
         throw new Error("Inputs have dates before 01/01/2020");
@@ -110,7 +130,7 @@ let updateProductEntries = async (obj) => {
 }
 
 let fetchExistingRecords = async (inputs,products) => {
-    const itemObj = require('/tmp/tenant-001/assets/rev_items.json');
+    const itemObj = global.ASSETS['001']['rev_items'];
     for(let pr_i=0;pr_i<inputs.length;pr_i++){
         if(inputs[pr_i][0]<2020){
             throw new Error("Inputs have dates before 01/01/2020");
@@ -238,7 +258,8 @@ let fetchExistingRecords = async (inputs,products) => {
 module.exports = {
     fetchExistingRecords,
     updateProductEntries,
-    getModelMetadata
+    getModelMetadata,
+    getCachedAssets
 }
 
 // getSequenceInputs('2020-1-22-3-2-2-0').then().catch()

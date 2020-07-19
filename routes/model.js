@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 // const cache = require("../middlewares/cache");
 const auth = require("../middlewares/auth");
-const modelinfo = require("/tmp/tenant-001/assets/models.json");
+const modelinfo = global.ASSETS['001']['models'];
 
 router.get("/", auth, async (req, res) => {
   let stamp = Math.floor(modelinfo["time"]);

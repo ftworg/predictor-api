@@ -1,13 +1,13 @@
 var tf = require("@tensorflow/tfjs-node");
-var itemsObj = require("/tmp/tenant-001/assets/rev_items.json");
-var normObj = require('/tmp/tenant-001/assets/norm.json');
-var pricesObj = require('/tmp/tenant-001/assets/prices.json');
-var modelObj = require('/tmp/tenant-001/assets/models.json');
-var item2Key = require('/tmp/tenant-001/assets/items.json');
-var holObj = require('/tmp/tenant-001/assets/holidays.json');
-var cat2items = require('/tmp/tenant-001/assets/cat2item.json');
-var items2cat = require('/tmp/tenant-001/assets/item2cat.json');
-var branchesObj = require('/tmp/tenant-001/assets/branches.json');
+var pricesObj = global.ASSETS['001']['prices'];
+var modelObj = global.ASSETS['001']['models'];
+var itemsObj = global.ASSETS['001']['rev_items'];
+var item2Key = global.ASSETS['001']['items'];
+var holObj = global.ASSETS['001']['holidays'];
+var cat2items = global.ASSETS['001']['cat2item'];
+var items2cat = global.ASSETS['001']['item2cat'];
+var branchesObj = global.ASSETS['001']['branches'];
+var cat2id = global.ASSETS['001']['cat2id'];
 const { isPublicHoliday, isWeekend, months, range } = require("./utils");
 const fs = require('fs');
 var utils = require("./utils");
@@ -20,23 +20,12 @@ Object.keys(branchesObj).forEach((branch) => {
 });
 
 let check_for_models = async () => {
-  if (!global.models) {
+  if (!global.model) {
     global.MODEL_CONFIG = modelObj;
-    models=[];
-    for(let i=modelObj["START"];i<modelObj["END"];i++){
-      let t =  Date.now();
-      let z_model = await tf.loadLayersModel(
-        "file:///tmp/tenant-001/models/prod_"+String(i+1)+"/0/model/bin/model.json"
+      let model = await tf.loadLayersModel(
+        "file:///tmp/tenant-001/universal_model/0.0.3/total_model/bin/model.json"
       );
-      let nz_model = await tf.loadLayersModel(
-        "file:///tmp/tenant-001/models/prod_"+String(i+1)+"/1/model/bin/model.json"
-      );      
-      models.push({
-        z_model,
-        nz_model
-      });
-    }
-    global.models = models;
+    global.model = model;
     console.log("Models loaded! ")
   }
 }
@@ -76,6 +65,130 @@ var feedToModel = async (input,inp_sequence,prod_ind) => {
     // console.log(output);
   }
   return Math.floor(output*10);
+}
+
+
+var feedToUniversalModel = async (inputs) => {
+  let inputs_seqs = [];
+  let inputs_prods = [];
+  let inputs_cats = [];
+  let inputs_context = [[],[],[],[]];
+  global.PREDICTIONS = global.PREDICTIONS +1;
+  inputs.forEach((input)=>{
+    // console.log(input);
+    inputs_seqs.push(input["seq_inp"]);
+    for(let i=0;i<input["context_inps"].length;i++){
+      inputs_context[i].push(input["context_inps"][i]);
+    }
+    inputs_prods.push([input["prod_ind"]]);
+    inputs_cats.push([input["cat_ind"]]);
+  });
+  let univOut = await global.model.predict([tf.expandDims(tf.tensor(inputs_seqs),axis=-1),
+                tf.tensor(inputs_prods),
+                tf.tensor(inputs_cats),
+                tf.tensor(inputs_context[0]),
+                tf.tensor(inputs_context[1]),
+                tf.tensor(inputs_context[2]),
+                tf.tensor(inputs_context[3])]);
+  nz = univOut[0].dataSync();
+  z = univOut[1].dataSync();
+  let universalOutputs = [];
+  for(let out_ind=0;out_ind<nz.length;out_ind++){
+    let curr_z = z[out_ind];
+    let curr_nz = nz[out_ind];
+    if(curr_z>0.5){
+      universalOutputs.push(Math.floor(global.MODEL_CONFIG["normalizer"]*curr_nz));
+    }
+    else{
+      universalOutputs.push(0);
+    }
+  }
+  // console.log(universalOutputs);
+  return universalOutputs;
+}
+
+const runUniversalPrediction = async (raw_inputs,gcpOutput,updateNewBool) => {
+  let records = gcpOutput[0];
+  let requestLevelCache = gcpOutput[1].records;
+  let cacheMaps = {};
+  let inputMap = {};
+  let actualMap = {};
+  let order = [];
+  for(let record_ind=0;record_ind<records.length;record_ind++){
+    let record = records[record_ind];
+    let product = record.product;
+    let prod_ind = record.index;
+    //console.log(product);
+    for(let inp_obj_ind=0;inp_obj_ind<record.objs.length;inp_obj_ind++){
+      let inputObj = record.objs[inp_obj_ind];
+      let input = inputObj.input;
+      let joined_input = inputObj.input.join('-');
+      if(inputMap[joined_input]===undefined){
+        inputMap[joined_input]=[];
+        actualMap[joined_input]=[];
+        order.push(joined_input);
+      }
+      let category = items2cat[product]["super"]+'-'+items2cat[product]["sub"];
+      inputMap[joined_input].push({
+        "seq_inp": inputObj.seq_inp,
+        prod_ind,
+        "cat_ind": cat2id[category],
+        "context_inps": [[input[3]],[input[4]],[input[5]],[input[6]]]
+      });
+      actualMap[joined_input].push(inputObj.actual);
+    }
+  }
+  //Feed to Model
+  let outputobjs = {}
+  let dates = Object.keys(inputMap);
+  // console.log(inputMap[dates[0]]);
+  // console.log(inputMap[dates[1]])
+  // dates.forEach(async (date)=>{
+  // console.log(dates);
+  for(let date_ind = 0;date_ind<dates.length;date_ind++){
+    let date = dates[date_ind];
+    // console.log("new iter "+date_ind+" "+dates.length);
+    let outputs = await feedToUniversalModel(inputMap[date]);
+    for(let i=0;i<outputs.length;i++){
+      let prod_ind = inputMap[date][i]["prod_ind"];
+      let product = itemsObj[prod_ind];
+      if(date_ind!==dates.length-1){
+        let new_seq_inp = inputMap[date][i]["seq_inp"].slice(0,inputMap[date][i]["seq_inp"].length-1);
+        new_seq_inp.push(outputs[i]);
+        inputMap[dates[date_ind+1]][i]["seq_inp"] = new_seq_inp;
+      }
+      //mapping to output
+      if(actualMap[date][i]===true){
+        if(outputobjs[date]===undefined){
+          outputobjs[date]={};
+        }
+        outputobjs[date][product]=outputs[i];
+      }
+      if(requestLevelCache[date]===undefined || requestLevelCache[date][product]===undefined){
+        if(cacheMaps[date]===undefined){
+          cacheMaps[date]={};
+        }
+        cacheMaps[date][product]={
+          "input": inputMap[date][i]["seq_inp"],
+          "output": outputs[i]
+        };
+      }
+    }
+  }
+
+  //Continue as per previous
+  // console.log(cacheMaps);
+  if(updateNewBool){
+    console.log("Updating");
+    await gcpUtils.updateProductEntries(cacheMaps);
+  }
+  //Arrange for aggregation
+  let outs=[]
+  for(let i=0;i<raw_inputs.length;i++){
+    let out = outputobjs[raw_inputs[i].join('-')]
+    outs.push(out);
+  }
+  return outs;
 }
 
 var predict_values = async function(raw_inputs,gcpOutput,updateNewBool){
@@ -378,7 +491,7 @@ var runPrediction = async function(inputJson) {
       throw new Error(e);
     }
     // console.log(gcpOutput);
-    result = await predict_values(inputs,gcpOutput,true);
+    result = await runUniversalPrediction(inputs,gcpOutput,false);
     result = agrregateOutput(inputs,result,inputJson.criteria);
     outputs = addRevenue(result, inputs);
     // console.log(outputs);
