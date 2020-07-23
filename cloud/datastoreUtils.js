@@ -54,6 +54,29 @@ let getAssetsFromGCP = async (tenant) => {
     }
 }
 
+let getInactivePeriod = async (tenant) => {
+    global.READS = global.READS + 1;
+    const query = datastore.createQuery('InactivePeriod').filter('Client',tenant);  
+    const [records] = await datastore.runQuery(query);
+    let res = records[0] && records[0].Data ? records[0].Data : undefined;
+    try{
+        return JSON.parse(res);
+    }catch(e){
+        console.log(e);
+        return undefined;
+    }
+}
+
+let getCachedInactivePeriod = async (tenant) => {
+    if(global.InactivePeriod===undefined){
+        global.InactivePeriod = {};
+    }
+    if(global.InactivePeriod[tenant]===undefined){
+        global.InactivePeriod[tenant] = await getInactivePeriod(tenant);
+    }
+    return global.InactivePeriod[tenant];
+}
+
 let getCachedAssets = async (tenant) => {
     if(global.ASSETS[tenant]===undefined){
         global.ASSETS[tenant] = await getAssetsFromGCP(tenant);
@@ -62,6 +85,12 @@ let getCachedAssets = async (tenant) => {
 }
 
 let getCachedProductEntries = async (cache,input) => {
+    if(global.InactivePeriod===undefined){
+        await getCachedInactivePeriod('001');
+    }
+    if(global.InactivePeriod['001']["inputs"].indexOf(input)>=0){
+        throw new Error("Inputs fall in Inactive Period");
+    }
     if(Number.parseInt(input.split('-')[0])<2020){
         throw new Error("Inputs have dates before 01/01/2020");
     }
@@ -259,7 +288,8 @@ module.exports = {
     fetchExistingRecords,
     updateProductEntries,
     getModelMetadata,
-    getCachedAssets
+    getCachedAssets,
+    getCachedInactivePeriod
 }
 
 // getSequenceInputs('2020-1-22-3-2-2-0').then().catch()

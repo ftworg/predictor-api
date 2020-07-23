@@ -53,12 +53,14 @@ function checkFileType(file, cb) {
 router.post("/custom/", auth, (req, res) => {
   upload(req, res, async (err) => {
     if (err) {
+      console.log(err);
       res.status(500).send("Server Error");
     } else {
       let csv_data = [];
       fs.createReadStream(req.file.path)
         .pipe(csv())
         .on("data", (row) => {
+          console.log(row);
           csv_data.push(row);
         })
         .on("end", async () => {
