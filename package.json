@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "dev": "nodemon --legacy-watch index.js",
-    "start": "npm rebuild @tensorflow/tfjs-node --build-from-source; node index.js"
+    "start": "node index.js",
+    "tfbuild": "npm rebuild @tensorflow/tfjs-node --build-from-source"
   },
   "author": "",
   "license": "ISC",
