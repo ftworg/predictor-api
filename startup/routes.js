@@ -10,6 +10,8 @@ const upload = require("../routes/file-upload");
 const report = require("../routes/report");
 const compare = require("../routes/compare");
 const modelinfo = require("../routes/model");
+const secret = require("../routes/secret");
+const inactivePeriod = require("../routes/inactive");
 
 module.exports = function (app) {
   app.use(
@@ -31,5 +33,7 @@ module.exports = function (app) {
   app.use("/api/report", report);
   app.use("/api/compare", compare);
   app.use("/api/model", modelinfo);
+  app.use("/api/secret", secret);
+  app.use("/api/inactive", inactivePeriod);
   app.use(error);
 };
