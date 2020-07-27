@@ -40,6 +40,17 @@ const downloadAssetsFromBucket = async (bucketName) =>{
     });
 }
 
+const uploadFileForTraining = async (bucketName,filename) => {
+    // Uploads a local file to the bucket
+    await storage.bucket(bucketName).upload(filename, {
+        gzip: true,
+        metadata: {
+        cacheControl: 'public, max-age=31536000',
+        },
+        destination: 'files/trainingData.xls'
+    });
+}
+
 const downloadAndExtractModels = async (bucketName) => {
     const srcDirName = 'models.zip'
     let rootDirName = '/tmp/'+bucketName;
@@ -71,5 +82,6 @@ const downloadAndExtractModels = async (bucketName) => {
 
 module.exports = {
     downloadAssetsFromBucket,
-    downloadAndExtractModels
+    downloadAndExtractModels,
+    uploadFileForTraining
 }
