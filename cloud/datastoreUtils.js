@@ -1,4 +1,6 @@
 const {Datastore} = require('@google-cloud/datastore');
+const moment = require("moment");
+const { entity } = require('@google-cloud/datastore/build/src/entity');
 const datastore = new Datastore();
 
 const TOOMANYREADS = 500;
@@ -17,6 +19,44 @@ let getPreviousInput = (input) => {
     return n;
 }
 
+const getPipelineStatus = async (tenantName) => {
+    const ds = new Datastore({
+        "namespace": tenantName
+    });
+    global.READS = global.READS + 1;
+    const query = ds.createQuery('PipelineStatus');  
+    const [records] = await ds.runQuery(query);
+    let res = records[0];
+    try{
+        return res;
+    }catch(e){
+        return undefined;
+    }
+}
+
+const updatePipelineStatus = async (tenantName,data) => {
+    const ds = new Datastore({
+        "namespace": tenantName
+    });
+    global.READS = global.READS + 1;
+    global.WRITES = global.WRITES + 1;
+    let items = await getPipelineStatus(tenantName);
+    const taskKey = items[ds.KEY];
+    let entity = {
+        key: taskKey,
+        data: {
+            "REPL": data.REPL,
+            "Status": "Uninitialised",
+            "devMode": items["devMode"],
+            "startTraining": true,
+            "times": String(Math.floor(Date.now()/1000))
+        }
+    };
+    // console.log(entity);
+    await ds.update(entity);
+}
+
+
 const getModelMetadata = async (tenantName) => {
     global.READS = global.READS + 1;
     const query = datastore.createQuery('ModelMetadata').filter('Client',tenantName);  
@@ -27,6 +67,42 @@ const getModelMetadata = async (tenantName) => {
     }catch(e){
         return undefined;
     }
+}
+
+let getUploadData = async (tenant) => {
+    const ds = new Datastore({
+        "namespace": tenant
+    });
+    global.READS = global.READS + 1;
+    const query = ds.createQuery('UPLOAD');  
+    const [records] = await ds.runQuery(query);
+    let res = records[0];
+    try{
+        return res;
+    }catch(e){
+        return undefined;
+    }
+}
+
+let updateUploadData = async (tenantName) => {
+    const ds = new Datastore({
+        "namespace": tenantName
+    });
+    global.READS = global.READS + 1;
+    global.WRITES = global.WRITES + 1;
+    let items = await getUploadData(tenantName);
+    let data = {
+        last_upload: moment(Date.now()).toObject()
+    }
+    data = JSON.stringify(data);
+    const taskKey = items[ds.KEY];
+    let entity = {
+        key: taskKey,
+        data: {
+            "Data": data
+        }
+    };
+    await ds.update(entity);
 }
 
 let getProductEntries = async (input) => {
@@ -289,7 +365,9 @@ module.exports = {
     updateProductEntries,
     getModelMetadata,
     getCachedAssets,
-    getCachedInactivePeriod
+    getCachedInactivePeriod,
+    updateUploadData,
+    getUploadData,
+    getPipelineStatus,
+    updatePipelineStatus
 }
-
-// getSequenceInputs('2020-1-22-3-2-2-0').then().catch()
