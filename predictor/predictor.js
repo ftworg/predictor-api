@@ -178,7 +178,7 @@ const runUniversalPrediction = async (raw_inputs,gcpOutput,updateNewBool) => {
 
   //Continue as per previous
   // console.log(cacheMaps);
-  if(updateNewBool){
+  if(updateNewBool && cacheMaps.length>0){
     console.log("Updating");
     await gcpUtils.updateProductEntries(cacheMaps);
   }
