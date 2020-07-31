@@ -9,7 +9,7 @@ const gcpLogin = async (obj) => {
     }
     await firebase.auth().signInWithEmailAndPassword(obj.email, obj.password);
     var user = firebase.auth().currentUser;
-    console.log(user);
+    // console.log(user);
     if (user) {
     // User is signed in.
         return user.getIdToken();

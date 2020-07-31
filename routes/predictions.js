@@ -4,6 +4,24 @@ const router = express.Router();
 const Joi = require("@hapi/joi");
 const auth = require("../middlewares/auth");
 const { runPrediction } = require("../predictor/predictor");
+const datastoreUtils = require("../cloud/datastoreUtils");
+
+const getDashboardCache = async (tenant,body) => {
+  const year = body.years[0].year;
+  const month = body.years[0].months[0].month;
+  const date = body.years[0].months[0].dates[0];
+  const cache = await datastoreUtils.getGenericObject(tenant,'ProductEntries',{
+    'Input': 'Cache-'+year+'-'+month+'-'+date
+  });
+  if(cache===undefined){
+    return {
+      "notCached": true
+    }
+  }
+  else{
+    return JSON.parse(cache["Items"]);
+  }
+}
 
 router.post("/", auth, async (req, res) => {
   const { error } = validate(req.body);
@@ -12,7 +30,34 @@ router.post("/", auth, async (req, res) => {
   let input = req.body;
   input.model = 1;
   try{
-    const result = await runPrediction(input);
+    let result;
+    let notCached = false;
+    const yrlength = req.body.years.length;
+    const mlength = req.body.years[0].months.length;
+    const dlength = req.body.years[0].months[0].dates.length;
+    if(yrlength===1 && mlength===1 && dlength===1){
+      console.log("Getting cached");
+      result = await getDashboardCache('tenant001',input);
+      if(result["notCached"]===true){
+        notCached=true;
+      }
+    }
+    if((yrlength!==1 || mlength!==1 || dlength!==1) ||  notCached===true){
+      console.log("Not cached")
+      result = await runPrediction(input);
+    }
+    if(notCached===true){
+      console.log("Updating Cache")
+      const year = req.body.years[0].year;
+      const month = req.body.years[0].months[0].month;
+      const date = req.body.years[0].months[0].dates[0];
+      await datastoreUtils.updateGenericObject('tenant001','ProductEntries',{
+        'Input': 'Cache-'+year+'-'+month+'-'+date
+      },{
+        'Input': 'Cache-'+year+'-'+month+'-'+date,
+        'Items': JSON.stringify(result)
+      });
+    }
     res.send(result);
   }catch(e){
     console.log(e);

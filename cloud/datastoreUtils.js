@@ -160,6 +160,76 @@ let getCachedAssets = async (tenant) => {
     return global.ASSETS[tenant];
 }
 
+let getGenericObject = async (tenant,kind,options) => {
+    const ds = new Datastore({
+        "namespace": tenant
+    });
+    global.READS = global.READS + 1;
+    let query = ds.createQuery(kind);
+    const filters = Object.keys(options);
+    filters.forEach((fil)=>{
+        query = query.filter(fil,options[fil]);
+    })  
+    const [records] = await ds.runQuery(query);
+    // console.log(records[0])
+    let res;
+    try{
+        if(records.length>=0){
+            res = records[0];
+            return res;
+        }
+        else{
+            return undefined;
+        }
+    }catch(e){
+        return undefined;
+    }
+}
+
+let updateGenericObject = async (tenant,kind,oldoptions,newoptions) => {
+    global.READS = global.READS + 1;
+    global.WRITES = global.WRITES + 1;
+    const ds = new Datastore({
+        "namespace": tenant
+    });
+    global.READS = global.READS + 1;
+    let query = ds.createQuery(kind);
+    const filters = Object.keys(oldoptions);
+    filters.forEach((fil)=>{
+        query = query.filter(fil,oldoptions[fil]);
+    })  
+    const [records] = await ds.runQuery(query);
+    let items = records[0] ? records[0] : undefined;
+    if(items===undefined){
+        console.log("New record");
+        const key = ds.key(kind);
+        let payload = newoptions;
+        const entity = {
+            key: key,
+            data: payload,
+            excludeLargeProperties: true
+        };
+        // console.log(entity);
+        await ds.upsert(entity);
+    }
+    else{
+        // console.log("Existing");
+        const taskKey = records[0][ds.KEY];
+        let payload = records[0];
+        const filters = Object.keys(newoptions);
+        filters.forEach((fil)=>{
+            payload[fil] = newoptions[fil];
+        })
+        entity = {
+            key: taskKey,
+            data: payload,
+            excludeLargeProperties: true
+        };
+        // console.log(entity);
+        await ds.update(entity);
+    }
+}
+
 let getCachedProductEntries = async (cache,input) => {
     if(global.InactivePeriod===undefined){
         await getCachedInactivePeriod('001');
@@ -366,8 +436,10 @@ module.exports = {
     getModelMetadata,
     getCachedAssets,
     getCachedInactivePeriod,
+    getGenericObject,
     updateUploadData,
     getUploadData,
     getPipelineStatus,
-    updatePipelineStatus
+    updatePipelineStatus,
+    updateGenericObject
 }
