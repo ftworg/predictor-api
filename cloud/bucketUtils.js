@@ -51,6 +51,37 @@ const uploadFileForTraining = async (bucketName,filename) => {
     });
 }
 
+const uploadGenericFile = async (bucketName,filename) => {
+    await storage.bucket(bucketName).upload("/tmp/"+bucketName+"/"+filename, {
+        gzip: true,
+        metadata: {
+        cacheControl: 'public, max-age=31536000',
+        },
+        destination: filename
+    });
+}
+
+const downloadGenericFile = async (bucketName,filename) => {
+    const destDir = '/tmp/'+bucketName;
+    const options = {
+        destination: destDir+"/"+filename,
+    };
+    let exists = fs.existsSync(destDir)
+    if(!exists){
+        fs.mkdirSync(destDir);
+    }
+    // Downloads the file
+    let res;
+    try{
+        res = await storage.bucket(bucketName).file(filename).download(options);
+    }catch(e){
+        res = {
+            "notFound": true
+        }
+    }
+    return res;
+}
+
 const downloadAndExtractModels = async (bucketName) => {
     const srcDirName = 'models.zip'
     let rootDirName = '/tmp/'+bucketName;
@@ -83,5 +114,7 @@ const downloadAndExtractModels = async (bucketName) => {
 module.exports = {
     downloadAssetsFromBucket,
     downloadAndExtractModels,
-    uploadFileForTraining
+    uploadFileForTraining,
+    uploadGenericFile,
+    downloadGenericFile
 }
