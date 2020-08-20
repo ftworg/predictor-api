@@ -61,8 +61,8 @@ const uploadGenericFile = async (bucketName,filename) => {
     });
 }
 
-const downloadGenericFile = async (bucketName,filename) => {
-    const destDir = '/tmp/'+bucketName;
+const downloadGenericFile = async (bucketName,folder,filename) => {
+    const destDir = '/tmp/'+bucketName+"/"+folder;
     const options = {
         destination: destDir+"/"+filename,
     };
@@ -73,8 +73,9 @@ const downloadGenericFile = async (bucketName,filename) => {
     // Downloads the file
     let res;
     try{
-        res = await storage.bucket(bucketName).file(filename).download(options);
+        res = await storage.bucket(bucketName).file(folder+"/"+filename).download(options);
     }catch(e){
+        console.log(e);
         res = {
             "notFound": true
         }
