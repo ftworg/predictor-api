@@ -82,8 +82,8 @@ const downloadGenericFile = async (bucketName,filename) => {
     return res;
 }
 
-const downloadAndExtractModels = async (bucketName) => {
-    const srcDirName = 'models.zip'
+const downloadAndExtractModels = async (bucketName,version) => {
+    const srcDirName = 'models/'+version+'/models.zip'
     let rootDirName = '/tmp/'+bucketName;
     let exists = fs.existsSync(rootDirName)
     if(!exists){
@@ -95,7 +95,7 @@ const downloadAndExtractModels = async (bucketName) => {
         fs.mkdirSync(destDirname);
     }
     const options = {
-        destination: destDirname+srcDirName,
+        destination: destDirname+'models.zip',
     };
 
     // Downloads the file
@@ -103,12 +103,12 @@ const downloadAndExtractModels = async (bucketName) => {
     await storage.bucket(bucketName).file(srcDirName).download(options);
     console.log("Extracting...");
     try {
-        await extract(destDirname+srcDirName, { dir: rootDirName });
+        await extract(destDirname+'models.zip', { dir: rootDirName });
         console.log('Extraction complete');
     } catch (err) {
         // handle any errors
     }
-    fs.unlinkSync(destDirname+srcDirName);
+    fs.unlinkSync(destDirname+'models.zip');
 }
 
 module.exports = {

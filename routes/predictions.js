@@ -11,14 +11,14 @@ const getDashboardCache = async (tenant,body) => {
   const year = body.years[0].year;
   const month = body.years[0].months[0].month;
   const date = body.years[0].months[0].dates[0];
-  const cache = await storageUtils.downloadGenericFile('tenant-001-store','Cache-'+year+'-'+month+'-'+date+'.json');
+  const cache = await storageUtils.downloadGenericFile('tenant-001-store','cache/Cache-'+year+'-'+month+'-'+date+'.json');
   if(cache["notFound"]===true){
     return {
       "notCached": true
     }
   }
   else{
-    let jsonData = require('/tmp/tenant-001-store/Cache-'+year+'-'+month+'-'+date+'.json');
+    let jsonData = require('/tmp/tenant-001-store/cache/Cache-'+year+'-'+month+'-'+date+'.json');
     return jsonData;
   }
 }
@@ -51,11 +51,11 @@ router.post("/", auth, async (req, res) => {
       const year = req.body.years[0].year;
       const month = req.body.years[0].months[0].month;
       const date = req.body.years[0].months[0].dates[0];
-      fs.writeFile("/tmp/tenant-001-store/"+'Cache-'+year+'-'+month+'-'+date+'.json', JSON.stringify(result), (err) => {
+      fs.writeFile("/tmp/tenant-001-store/"+'cache/Cache-'+year+'-'+month+'-'+date+'.json', JSON.stringify(result), (err) => {
         if (err) throw err;
         console.log('Data written to file');
       });
-      await storageUtils.uploadGenericFile('tenant-001-store','Cache-'+year+'-'+month+'-'+date+'.json');
+      await storageUtils.uploadGenericFile('tenant-001-store','cache/Cache-'+year+'-'+month+'-'+date+'.json');
     }
     res.send(result);
   }catch(e){

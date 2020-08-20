@@ -13,6 +13,7 @@ const modelinfo = require("../routes/model");
 const secret = require("../routes/secret");
 const inactivePeriod = require("../routes/inactive");
 const login = require("../routes/login");
+const inventory = require("../routes/inventory");
 
 module.exports = function (app) {
   app.use(
@@ -37,5 +38,6 @@ module.exports = function (app) {
   app.use("/api/secret", secret);
   app.use("/api/inactive", inactivePeriod);
   app.use("/api/login", login);
+  app.use("/api/inventory", inventory);
   app.use(error);
 };

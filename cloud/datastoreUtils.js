@@ -58,10 +58,13 @@ const updatePipelineStatus = async (tenantName,data) => {
 
 
 const getModelMetadata = async (tenantName) => {
+    const ds = new Datastore({
+        "namespace": tenantName
+    });
     global.READS = global.READS + 1;
-    const query = datastore.createQuery('ModelMetadata').filter('Client',tenantName);  
-    const [records] = await datastore.runQuery(query);
-    let res = records[0]
+    const query = ds.createQuery('ModelMetadata');  
+    const [records] = await ds.runQuery(query);
+    let res = records[0];
     try{
         return res;
     }catch(e){
@@ -166,7 +169,7 @@ let getGenericObject = async (tenant,kind,options) => {
     });
     global.READS = global.READS + 1;
     let query = ds.createQuery(kind);
-    const filters = Object.keys(options);
+    const filters = options ? Object.keys(options) : [];
     filters.forEach((fil)=>{
         query = query.filter(fil,options[fil]);
     })  
@@ -192,19 +195,18 @@ let updateGenericObject = async (tenant,kind,oldoptions,newoptions) => {
     const ds = new Datastore({
         "namespace": tenant
     });
-    global.READS = global.READS + 1;
     let query = ds.createQuery(kind);
-    const filters = Object.keys(oldoptions);
+    const filters = oldoptions ? Object.keys(oldoptions) : [];
     filters.forEach((fil)=>{
         query = query.filter(fil,oldoptions[fil]);
-    })  
+    });  
     const [records] = await ds.runQuery(query);
     let items = records[0] ? records[0] : undefined;
     if(items===undefined){
         console.log("New record");
         const key = ds.key(kind);
         let payload = newoptions;
-        const entity = {
+        let entity = {
             key: key,
             data: payload,
             excludeLargeProperties: true
@@ -220,7 +222,7 @@ let updateGenericObject = async (tenant,kind,oldoptions,newoptions) => {
         filters.forEach((fil)=>{
             payload[fil] = newoptions[fil];
         })
-        entity = {
+        let entity = {
             key: taskKey,
             data: payload,
             excludeLargeProperties: true
