@@ -19,11 +19,11 @@ Object.keys(branchesObj).forEach((branch) => {
   id2branch[branchesObj[branch]] = branch;
 });
 
-let check_for_models = async () => {
+let check_for_models = async (ver) => {
   if (!global.model) {
     global.MODEL_CONFIG = modelObj;
       let model = await tf.loadLayersModel(
-        "file:///tmp/tenant-001/universal_model/0.0.3/total_model/bin/model.json"
+        "file:///tmp/tenant001-store/universal_model/"+ver+"/total_model/bin/model.json"
       );
     global.model = model;
     console.log("Models loaded! ")

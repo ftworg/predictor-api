@@ -2,13 +2,13 @@ const startupScript = async () => {
     global.ASSETS = {};
     const datastoreUtils = require('../cloud/datastoreUtils');
     const bucketUtils = require('../cloud/bucketUtils');
-    const MM = await datastoreUtils.getModelMetadata('Tosai');
+    const MM = await datastoreUtils.getModelMetadata('tenant001');
     await datastoreUtils.getCachedAssets('001');
-    await bucketUtils.downloadAndExtractModels(MM.BucketName);
+    await bucketUtils.downloadAndExtractModels(MM.Tenant+'-store',MM.ver);
     // const { runPrediction } = require('../predictor/predictor');
     // const { getAllInputs } = require('../predictor/utils');
     const load_model = require('../predictor/predictor').check_for_models;
-    await load_model();
+    await load_model(MM.ver);
     // const allInputs = getAllInputs();
     // const inputObj = {
     //     "criteria": 2, 
