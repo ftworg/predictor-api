@@ -2,7 +2,10 @@ const datastoreUtils = require("../cloud/datastoreUtils");
 const { mod } = require("@tensorflow/tfjs");
 
 const getLiveInventory = async (tenant) => {
-    let period = await datastoreUtils.getGenericObject(tenant,'LiveInventory');
+    let period = await datastoreUtils.getGenericObject({
+        "tenant": tenant,
+        "kind": 'LiveInventory'
+    });
     period = JSON.parse(period["Data"]);
     return period;
 }

@@ -4,7 +4,7 @@ const startupScript = async () => {
     const bucketUtils = require('../cloud/bucketUtils');
     const MM = await datastoreUtils.getModelMetadata('tenant001');
     await datastoreUtils.getCachedAssets('001');
-    await bucketUtils.downloadAndExtractModels(MM.Tenant+'-store',MM.ver);
+    // await bucketUtils.downloadAndExtractModels(MM.Tenant+'-store',MM.ver);
     // const { runPrediction } = require('../predictor/predictor');
     // const { getAllInputs } = require('../predictor/utils');
     const load_model = require('../predictor/predictor').check_for_models;

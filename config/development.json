@@ -1,3 +1,4 @@
 {
-  "name": "Tosai-Predict-Dev"
+  "name": "Tosai-Predict-Dev",
+  "secret": "Firebase_Auth_JSON"
 }

@@ -163,10 +163,12 @@ let getCachedAssets = async (tenant) => {
     return global.ASSETS[tenant];
 }
 
-let getGenericObject = async (tenant,kind,options) => {
-    const ds = new Datastore({
+let getGenericObject = async (iden,options) => {
+    const tenant = iden.tenant;
+    const kind = iden.kind;
+    const ds = tenant ? new Datastore({
         "namespace": tenant
-    });
+    }) : new Datastore();
     global.READS = global.READS + 1;
     let query = ds.createQuery(kind);
     const filters = options ? Object.keys(options) : [];

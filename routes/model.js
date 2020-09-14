@@ -6,7 +6,11 @@ const auth = require("../middlewares/auth");
 const datastoreUtils = require("../cloud/datastoreUtils");
 
 router.get("/", auth, async (req, res) => {
-  let modelinfo = await datastoreUtils.getGenericObject('tenant001','ModelMetadata',{
+  let modelinfo = await datastoreUtils.getGenericObject({
+    "tenant": 'tenant001',
+    "kind": 'ModelMetadata'
+  },
+  {
     "Tenant": 'tenant001'
   });
   let stamp = Math.floor(modelinfo["time"]);

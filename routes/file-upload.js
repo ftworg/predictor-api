@@ -39,8 +39,8 @@ function checkFileType(file, cb) {
 
 const getTrainingDetails = (pipelineStatus) => {
   //curr status, time elapsed since last update, Status wise timestamp
-  // const stages = ["Uninitialised","Migration Running","Data Migrated to BQ","Data Preprocessing Completed","Training Completed","Models Deployed"];
-  const uistages = ["Started","Pipeline Initiated","PreProcessing Started","Training Started","Training Completed","Models Deployed"];
+  // const stages = ["Uninitialised","Cloud Function Running","Data Migrated to BQ","Data Preprocessing Completed","Training Completed","Models Deployed","Data Cleaned"];
+  const uistages = ["Started","Pipeline Initiated","PreProcessing Started","Training Started","Training Completed","Models Deployed","Data Cleaned"];
   // const progress = stages.indexOf(pipelineStatus["Status"]);
   // if(progress<0){
   //   throw new Error('Status undefined');

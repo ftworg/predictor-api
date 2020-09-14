@@ -5,6 +5,7 @@ const auth = require("../middlewares/auth");
 const categories = global.ASSETS['001']['cat2item'];
 
 router.get("/", auth, async (req, res) => {
+  console.log(req.tenant);
   let result = [];
   if (!categories) {
     return res.status(500).send("Unable to process. Kindly verify the inputs.");

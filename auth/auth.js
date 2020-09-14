@@ -1,3 +1,5 @@
+const firebase = require("firebase");
+
 function initilalizeApp(admin) {
   admin.initializeApp({
     credential: admin.credential.applicationDefault(),
@@ -5,8 +7,9 @@ function initilalizeApp(admin) {
   global.AuthAdmin = admin;
 }
 
-async function verifyUser(token) {
+async function verifyUser(token,tenant) {
   try {
+    firebase.auth().tenantId = tenant;
     const decodedToken = await global.AuthAdmin.auth().verifyIdToken(token);
     let uid = decodedToken.uid;
     return {
