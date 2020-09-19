@@ -1,32 +1,25 @@
 var tf = require("@tensorflow/tfjs-node");
-var pricesObj = global.ASSETS['001']['prices'];
-var modelObj = global.ASSETS['001']['models'];
-var itemsObj = global.ASSETS['001']['rev_items'];
-var item2Key = global.ASSETS['001']['items'];
-var holObj = global.ASSETS['001']['holidays'];
-var cat2items = global.ASSETS['001']['cat2item'];
-var items2cat = global.ASSETS['001']['item2cat'];
-var branchesObj = global.ASSETS['001']['branches'];
-var cat2id = global.ASSETS['001']['cat2id'];
 const { isPublicHoliday, isWeekend, months, range } = require("./utils");
 const fs = require('fs');
 var utils = require("./utils");
-var gcpUtils = require("../cloud/datastoreUtils");
 const url = require('url');
+const datastoreUtils = require("../cloud/datastoreUtils");
 
-let id2branch = {};
-Object.keys(branchesObj).forEach((branch) => {
-  id2branch[branchesObj[branch]] = branch;
-});
-
-let check_for_models = async (ver) => {
-  if (!global.model) {
-    global.MODEL_CONFIG = modelObj;
-      let model = await tf.loadLayersModel(
-        "file:///tmp/tenant001-store/universal_model/"+ver+"/total_model/bin/model.json"
-      );
-    global.model = model;
-    console.log("Models loaded! ")
+let check_for_models = async (tenant,ver,modelObj) => {
+  if (global.model===undefined) {
+      try{
+        let model = await tf.loadLayersModel(
+        "file:///tmp/"+tenant+"-store/universal_model/"+ver+"/total_model/bin/model.json"
+        );
+        global.model={
+          "config": modelObj,
+          "model": model
+        }
+      console.log("Models loaded! ");
+    }catch(e){
+      console.log(e);
+      throw new Error(e);
+    }
   }
 }
 
@@ -83,7 +76,7 @@ var feedToUniversalModel = async (inputs) => {
     inputs_prods.push([input["prod_ind"]]);
     inputs_cats.push([input["cat_ind"]]);
   });
-  let univOut = await global.model.predict([tf.expandDims(tf.tensor(inputs_seqs),axis=-1),
+  let univOut = await global.model["model"].predict([tf.expandDims(tf.tensor(inputs_seqs),axis=-1),
                 tf.tensor(inputs_prods),
                 tf.tensor(inputs_cats),
                 tf.tensor(inputs_context[0]),
@@ -97,7 +90,7 @@ var feedToUniversalModel = async (inputs) => {
     let curr_z = z[out_ind];
     let curr_nz = nz[out_ind];
     if(curr_z>0.5){
-      universalOutputs.push(Math.floor(global.MODEL_CONFIG["normalizer"]*curr_nz));
+      universalOutputs.push(Math.floor(global.model["config"]["normalizer"]*curr_nz));
     }
     else{
       universalOutputs.push(0);
@@ -108,6 +101,9 @@ var feedToUniversalModel = async (inputs) => {
 }
 
 const runUniversalPrediction = async (raw_inputs,gcpOutput,updateNewBool) => {
+  let itemsObj = global.ASSETS['rev_items'];
+  let items2cat = global.ASSETS['item2cat'];
+  let cat2id = global.ASSETS['cat2id'];
   let records = gcpOutput[0];
   let requestLevelCache = gcpOutput[1].records;
   let cacheMaps = {};
@@ -180,7 +176,7 @@ const runUniversalPrediction = async (raw_inputs,gcpOutput,updateNewBool) => {
   // console.log(cacheMaps);
   if(updateNewBool && cacheMaps.length>0){
     console.log("Updating");
-    await gcpUtils.updateProductEntries(cacheMaps);
+    await global.DB.updateProductEntries(cacheMaps);
   }
   //Arrange for aggregation
   let outs=[]
@@ -244,7 +240,7 @@ var predict_values = async function(raw_inputs,gcpOutput,updateNewBool){
   // console.log(inputMaps);
   if(updateNewBool){
     // console.log("Updating");
-    await gcpUtils.updateProductEntries(inputMaps);
+    await global.DB.updateProductEntries(inputMaps);
   }
   //Arrange for aggregation
   let outs=[]
@@ -255,7 +251,7 @@ var predict_values = async function(raw_inputs,gcpOutput,updateNewBool){
   return outs;
 }
 
-var composeInputs = async function(input) {
+var composeInputs = async function(tenant,input) {
   for (let i = 0; i < input.years.length; i++) {
     const year = input.years[i];
 
@@ -287,7 +283,7 @@ var composeInputs = async function(input) {
         for (var j = 0; j < month.dates.length; j++) {
           const date = month.dates[j];
           for (var tod = 1; tod < 4; tod++) {
-            let isPHoliday = isPublicHoliday(year.year,month.month,date);
+            let isPHoliday = isPublicHoliday(tenant,year.year,month.month,date);
             let isWeekEnd = isWeekend(date, month.month-1, year.year);
             inputs.push([
               year.year,
@@ -374,6 +370,7 @@ var agrregateOutput = function(inputs,outputs,criteria) {
 var addSpecialDays = (inputs, new_Out) => {
   new_Out["holidays"]=[];
   new_Out["weekdays"]={}
+  let holObj = global.ASSETS['holidays'];
   for(let i=0;i<inputs.length;i++){
     let currdate = inputs[i].slice(0,3);
     let inp_keys = Object.keys(new_Out.weekdays);
@@ -395,6 +392,8 @@ var addSpecialDays = (inputs, new_Out) => {
 }
 
 var packageIO = function(inputs,outputs) {
+  let item2Key = global.ASSETS['items'];
+  let items2cat = global.ASSETS['item2cat'];
   let new_Out = [];
   let rev = JSON.parse(JSON.stringify(outputs.revenue));
   let quan = JSON.parse(JSON.stringify(outputs.quantity));
@@ -418,8 +417,10 @@ var packageIO = function(inputs,outputs) {
   return new_Out; 
 }
 
-var getProductSet = (catObj) => {
+var getProductSet = (tenant,catObj) => {
   let products=[]
+  let cat2items = global.ASSETS['cat2item'];
+  let item2Key = global.ASSETS['items'];
   for(let i=0;i<catObj.length;i++){
     let sup = catObj[i]["super"];
     let subs = catObj[i]["sub"];
@@ -435,7 +436,6 @@ var getProductSet = (catObj) => {
       inds.push(item2Key[products[i]]);
     }
   }
-  //console.log(inds);
   return inds;
 }
 
@@ -469,10 +469,22 @@ var addInsights = (inputs,obj) => {
   return obj;
 }
 
-var runPrediction = async function(inputJson) {
+var runPrediction = async function(tenant,inputJson) {
+  if (global.model===undefined) {
+    const bucketUtils = require('../cloud/bucketUtils');
+    const MM = await global.DB.getModelMetadata(tenant);
+    await global.DB.getCachedAssets(tenant);
+    await bucketUtils.downloadAndExtractModels(MM.Tenant+'-store',MM.ver);
+    await check_for_models(tenant,MM.ver,global.ASSETS["models"]);
+  }
   initializeCounts();
+  let branchesObj = global.ASSETS['branches'];
+  let id2branch = {};
+  Object.keys(branchesObj).forEach((branch) => {
+    id2branch[branchesObj[branch]] = branch;
+  });
   let branches = JSON.parse(JSON.stringify(inputJson.branch));
-  let products = getProductSet(inputJson.category);
+  let products = getProductSet(tenant,inputJson.category);
   let result;
   let outputs;
   let outputResObject = {
@@ -481,13 +493,14 @@ var runPrediction = async function(inputJson) {
   let inputs;
   for(let branch=0;branch<branches.length;branch++){
     inputJson.branch = [branches[branch]];
-    inputs = await composeInputs(inputJson);
+    inputs = await composeInputs(tenant,inputJson);
     //Getting existing records
     let gcpOutput;
     try{
-      gcpOutput = await gcpUtils.fetchExistingRecords(inputs,products);
+      gcpOutput = await datastoreUtils.fetchExistingRecords(tenant,inputs,products);
       // console.log(gcpOutput);
     }catch(e){
+      console.log(e);
       throw new Error(e);
     }
     // console.log(gcpOutput);
@@ -509,6 +522,7 @@ var runPrediction = async function(inputJson) {
 
 const addRevenue = function(outputs) {
   let outputObj = {};
+  let pricesObj = global.ASSETS["prices"];
   outputObj["quantity"] = JSON.parse(JSON.stringify(outputs));
   let rev={};
   let out_keys= Object.keys(outputs);

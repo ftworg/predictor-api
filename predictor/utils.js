@@ -1,10 +1,9 @@
 const fs = require('fs');
-var ph = global.ASSETS['001']['holidays'];
-const branchObj = global.ASSETS['001']['branches'];
-const cat = global.ASSETS['001']['cat2item'];
 const { all } = require('@tensorflow/tfjs');
 
 const getAllInputs = () => {
+  let branchObj = global.ASSETS['branches'];
+  let cat = global.ASSETS['cat2item'];
   let today = new Date(Date.now());
   let mon = {};
   let branches = Object.values(branchObj);
@@ -75,7 +74,8 @@ const get_seq_inputs = (win_size,input) => {
   // TO DO: GCP Integration
 }
 
-const isPublicHoliday = (year,month,date) => {
+const isPublicHoliday = (tenant,year,month,date) => {
+  let ph = global.ASSETS['holidays'];
   let dates = ph[month];
   for(let i=0;i<dates.length;i++){
     if(date==dates[i]){

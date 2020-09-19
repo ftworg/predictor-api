@@ -1,23 +1,19 @@
-const datastoreUtils = require("../cloud/datastoreUtils");
 const { mod } = require("@tensorflow/tfjs");
 
-const getLiveInventory = async (tenant) => {
-    let period = await datastoreUtils.getGenericObject({
-        "tenant": tenant,
-        "kind": 'LiveInventory'
-    });
+const getLiveInventory = async () => {
+    let period = await global.DB.getGenericObject('LiveInventory');
     period = JSON.parse(period["Data"]);
     return period;
 }
 
-const updateLiveInventory = async (tenant,data) => {
+const updateLiveInventory = async (data) => {
     // let inventory = await getLiveInventory(tenant);
     // Object.keys(data).forEach((branch)=>{
     //     Object.keys(data[branch]).forEach((item)=>{
     //         inventory[branch][item] = data[branch][item];
     //     });
     // });
-    await datastoreUtils.updateGenericObject(tenant,'LiveInventory',{},{
+    await global.DB.updateGenericObject('LiveInventory',{},{
         "Data": JSON.stringify(data)
     });
 }

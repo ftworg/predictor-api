@@ -1,13 +1,6 @@
-var item2Key = global.ASSETS['001']['items'];
-var items2cat = global.ASSETS['001']['item2cat'];
 var gcpUtils = require("../cloud/datastoreUtils.js");
 var predictor = require("../predictor/predictor.js");
-var branchObj = global.ASSETS['001']['branches'];
 
-let id2branch = {};
-Object.keys(branchObj).forEach((branch) => {
-  id2branch[branchObj[branch]] = branch;
-});
 
 let getActuals = (objs) => {
     let out ={};
@@ -53,6 +46,8 @@ let cleanActuals = (objs) => {
 }
 
 let packageIO = (inputs,outputs,actuals) => {
+    item2Key = global.ASSETS['items'];
+    items2cat = global.ASSETS['item2cat'];
     let new_Out = [];
     let rev = JSON.parse(JSON.stringify(outputs.revenue));
     let quan = JSON.parse(JSON.stringify(outputs.quantity));
@@ -95,6 +90,7 @@ let isValidSalesData = (obj) => {
 }
 
 let parseFileData = (data) => {
+    let branchObj = global.ASSETS['branches'];
     let aggregatedResults = {};
     let branches = [];
     let products = [];
@@ -173,6 +169,11 @@ let parseFileData = (data) => {
 }
 
 let compareWithUploaded = async (data) => {
+    let id2branch = {};
+    let branchObj = global.ASSETS["branches"];
+    Object.keys(branchObj).forEach((branch) => {
+    id2branch[branchObj[branch]] = branch;
+    });
     predictor.initializeCounts();
     [aggregatedResults,inputJson] = parseFileData(data);
     let branches = JSON.parse(JSON.stringify(inputJson.branch));
@@ -189,7 +190,7 @@ let compareWithUploaded = async (data) => {
         let gcpOutput;
         let actuals;
         try{
-            gcpOutput = await gcpUtils.fetchExistingRecords(inputs,products);
+            gcpOutput = await gcpUtils.fetchExistingRecords(global.tenant,inputs,products);
             isValidSalesData(gcpOutput[1]);
             actuals = getActuals(gcpOutput[0]);
         }catch(e){
@@ -210,6 +211,11 @@ let compareWithUploaded = async (data) => {
 }
 
 let getComparison = async (inputJson) => {
+    let id2branch = {};
+    let branchObj = global.ASSETS["branches"];
+    Object.keys(branchObj).forEach((branch) => {
+    id2branch[branchObj[branch]] = branch;
+    });
     predictor.initializeCounts();
     let branches = inputJson.branch;
     let products = predictor.getProductSet(inputJson.category);
@@ -226,7 +232,7 @@ let getComparison = async (inputJson) => {
         let gcpOutput;
         let actuals;
         try{
-            gcpOutput = await gcpUtils.fetchExistingRecords(inputs,products);
+            gcpOutput = await gcpUtils.fetchExistingRecords(global.tenant,inputs,products);
             isValidSalesData(gcpOutput[1]);
             actuals = getActuals(gcpOutput[0]);
         }catch(e){

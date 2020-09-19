@@ -11,7 +11,6 @@ const compareUtils = require("../compare/compareUtils");
 router.post("/fly/", auth, async (req, res) => {
   const { error } = validate(req.body);
   if (error) return res.status(400).send(error.message);
-
   let input = req.body;
   try {
     let result = await compareUtils.getComparison(input);
@@ -60,7 +59,6 @@ router.post("/custom/", auth, (req, res) => {
       fs.createReadStream(req.file.path)
         .pipe(csv())
         .on("data", (row) => {
-          console.log(row);
           csv_data.push(row);
         })
         .on("end", async () => {

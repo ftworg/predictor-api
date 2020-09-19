@@ -2,17 +2,17 @@ const express = require("express");
 const router = express.Router();
 // const cache = require("../middlewares/cache");
 const auth = require("../middlewares/auth");
-var cat2items = global.ASSETS['001']['cat2item'];
-var items2cat = global.ASSETS['001']['item2cat'];
-var branchesObj = global.ASSETS['001']['branches'];
-var itemsObj = global.ASSETS['001']['items'];
-const datastoreUtils = require("../cloud/datastoreUtils");
 const inventoryUtils = require("../inventory/inventoryUtils");
 
 const operations = ["Add","Set","Remove","Transfer"];
 
 router.get("/live/", auth, async (req, res) => {
-    let period = await inventoryUtils.getLiveInventory('tenant001');
+    if(global.ASSETS===undefined){
+        await global.DB.getCachedAssets(req.tenant);
+      }
+    var items2cat = global.ASSETS['item2cat'];
+    var itemsObj = global.ASSETS['items'];
+    let period = await inventoryUtils.getLiveInventory(req.tenant);
     let branches = Object.keys(period);
     let results = [];
     branches.forEach((branch)=>{
@@ -41,6 +41,12 @@ router.get("/live/", auth, async (req, res) => {
 });
 
 router.get("/", auth, async (req, res) => {
+    if(global.ASSETS===undefined){
+        await global.DB.getCachedAssets(req.tenant);
+      }
+    var cat2items = global.ASSETS['cat2item'];
+    var items2cat = global.ASSETS['item2cat'];
+    var branchesObj = global.ASSETS['branches'];
     const branches = Object.keys(branchesObj);
     const categories = cat2items;
     const items = Object.keys(items2cat);
@@ -56,10 +62,10 @@ router.post("/", auth, async (req,res) => {
     try{
         const inputJson = verifyInput(req);
         if(inputJson.operation==="Transfer"){
-            await inventoryUtils.executeOperation('tenant001',"Remove",inputJson.items,inputJson.source);
+            await inventoryUtils.executeOperation(req.tenant,"Remove",inputJson.items,inputJson.source);
             inputJson.operation="Add";
         }
-        await inventoryUtils.executeOperation('tenant001',inputJson.operation,inputJson.items,inputJson.target);
+        await inventoryUtils.executeOperation(req.tenant,inputJson.operation,inputJson.items,inputJson.target);
         res.send({
             "message": "Operation successful"
         });

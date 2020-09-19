@@ -1,15 +1,15 @@
 const firebase = require("firebase");
 const secretUtils = require("./secretUtils");
-const datastoreUtils = require("./datastoreUtils");
 var md5 = require('md5');
 const { get } = require("../routes/model");
 const key = 'n3wS3cr3tK3yF0rC0nt3xt';
 const encryptor = require('simple-encryptor')(key);
-
+const {DB} = require("../cloud/datastoreUtils");
 const getTenantFromEmail = async(email) => {
-    const userObj = await datastoreUtils.getGenericObject({
-        "kind": 'UserObject'
-    },
+    if (global.DB===undefined){
+        global.DB = new DB(undefined);
+    }
+    const userObj = await global.DB.getGenericObject('UserObject',
     {
         "user": md5(email)
     });
