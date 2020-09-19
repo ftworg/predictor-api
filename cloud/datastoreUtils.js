@@ -5,6 +5,68 @@ const datastore = new Datastore();
 
 const TOOMANYREADS = 500;
 
+let getGenericObject = async function (kind,options) {
+    global.READS = global.READS + 1;
+    let query = datastore.createQuery(kind);
+    const filters = options ? Object.keys(options) : [];
+    filters.forEach((fil)=>{
+        query = query.filter(fil,options[fil]);
+    })  
+    const [records] = await datastore.runQuery(query);
+    // console.log(records[0])
+    let res;
+    try{
+        if(records.length>=0){
+            res = records[0];
+            return res;
+        }
+        else{
+            return undefined;
+        }
+    }catch(e){
+        return undefined;
+    }
+}
+let updateGenericObject = async function(kind,oldoptions,newoptions){
+    global.READS = global.READS + 1;
+    global.WRITES = global.WRITES + 1;
+    let query = datastore.createQuery(kind);
+    const filters = oldoptions ? Object.keys(oldoptions) : [];
+    filters.forEach((fil)=>{
+        query = query.filter(fil,oldoptions[fil]);
+    });  
+    const [records] = await datastore.runQuery(query);
+    let items = records[0] ? records[0] : undefined;
+    if(items===undefined){
+        console.log("New record");
+        const key = datastore.key(kind);
+        let payload = newoptions;
+        let entity = {
+            key: key,
+            data: payload,
+            excludeLargeProperties: true
+        };
+        // console.log(entity);
+        await datastore.upsert(entity);
+    }
+    else{
+        // console.log("Existing");
+        const taskKey = records[0][ds.KEY];
+        let payload = records[0];
+        const filters = Object.keys(newoptions);
+        filters.forEach((fil)=>{
+            payload[fil] = newoptions[fil];
+        })
+        let entity = {
+            key: taskKey,
+            data: payload,
+            excludeLargeProperties: true
+        };
+        // console.log(entity);
+        await datastore.update(entity);
+    }
+}
+
 let DB = function(tenant){
     this.client = tenant ? new Datastore({
         "namespace": tenant
@@ -402,5 +464,7 @@ let fetchExistingRecords = async (tenant,inputs, products) => {
 module.exports = {
     fetchExistingRecords,
     getPreviousInput,
-    DB
+    DB,
+    getGenericObject,
+    updateGenericObject
 }
