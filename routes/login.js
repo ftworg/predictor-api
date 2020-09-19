@@ -4,10 +4,8 @@ const firebaseUtils = require("../cloud/firebaseUtils");
 
 router.post("/", async (req, res) => {
     try{
-        const token = await firebaseUtils.gcpLogin(req.body);
-        res.status(200).send({
-            token
-        });
+        const obj = await firebaseUtils.gcpLogin(req.body);
+        res.status(200).send(obj);
     }
     catch(e){
         console.log(e);

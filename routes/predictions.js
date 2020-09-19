@@ -11,14 +11,14 @@ const getDashboardCache = async (tenant,body) => {
   const year = body.years[0].year;
   const month = body.years[0].months[0].month;
   const date = body.years[0].months[0].dates[0];
-  const cache = await storageUtils.downloadGenericFile('tenant001-store','cache','Cache-'+year+'-'+month+'-'+date+'.json');
+  const cache = await storageUtils.downloadGenericFile(tenant+'-store','cache','Cache-'+year+'-'+month+'-'+date+'.json');
   if(cache["notFound"]===true){
     return {
       "notCached": true
     }
   }
   else{
-    let jsonData = require('/tmp/tenant001-store/cache/Cache-'+year+'-'+month+'-'+date+'.json');
+    let jsonData = require('/tmp/'+tenant+'-store/cache/Cache-'+year+'-'+month+'-'+date+'.json');
     return jsonData;
   }
 }
@@ -37,25 +37,25 @@ router.post("/", auth, async (req, res) => {
     const dlength = req.body.years[0].months[0].dates.length;
     if(yrlength===1 && mlength===1 && dlength===1){
       console.log("Getting cached");
-      result = await getDashboardCache('tenant001',input);
+      result = await getDashboardCache(req.tenant,input);
       if(result["notCached"]===true){
         notCached=true;
       }
     }
     if((yrlength!==1 || mlength!==1 || dlength!==1) ||  notCached===true){
       console.log("Not cached")
-      result = await runPrediction(input);
+      result = await runPrediction(req.tenant,input);
     }
     if(notCached===true){
       console.log("Updating Cache")
       const year = req.body.years[0].year;
       const month = req.body.years[0].months[0].month;
       const date = req.body.years[0].months[0].dates[0];
-      fs.writeFile("/tmp/tenant001-store/"+'cache/Cache-'+year+'-'+month+'-'+date+'.json', JSON.stringify(result), (err) => {
+      fs.writeFile("/tmp/"+req.tenant+"-store/"+'cache/Cache-'+year+'-'+month+'-'+date+'.json', JSON.stringify(result), (err) => {
         if (err) throw err;
         console.log('Data written to file');
       });
-      await storageUtils.uploadGenericFile('tenant001-store','cache/Cache-'+year+'-'+month+'-'+date+'.json');
+      await storageUtils.uploadGenericFile(req.tenant+'-store','cache/Cache-'+year+'-'+month+'-'+date+'.json');
     }
     res.send(result);
   }catch(e){

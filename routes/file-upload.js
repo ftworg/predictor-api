@@ -6,7 +6,6 @@ const moment = require("moment");
 const path = require("path");
 const auth = require("../middlewares/auth");
 const storageUtils = require("../cloud/bucketUtils");
-const datastoreUtils = require("../cloud/datastoreUtils");
 const { trimStart } = require("lodash");
 
 const storage = multer.diskStorage({
@@ -39,8 +38,8 @@ function checkFileType(file, cb) {
 
 const getTrainingDetails = (pipelineStatus) => {
   //curr status, time elapsed since last update, Status wise timestamp
-  // const stages = ["Uninitialised","Migration Running","Data Migrated to BQ","Data Preprocessing Completed","Training Completed","Models Deployed"];
-  const uistages = ["Started","Pipeline Initiated","PreProcessing Started","Training Started","Training Completed","Models Deployed"];
+  // const stages = ["Uninitialised","Cloud Function Running","Data Migrated to BQ","Data Preprocessing Completed","Training Completed","Models Deployed","Data Cleaned"];
+  const uistages = ["Started","Pipeline Initiated","PreProcessing Started","Training Started","Training Completed","Models Deployed","Data Cleaned"];
   // const progress = stages.indexOf(pipelineStatus["Status"]);
   // if(progress<0){
   //   throw new Error('Status undefined');
@@ -78,7 +77,7 @@ const getTrainingDetails = (pipelineStatus) => {
 }
 
 router.get("/", auth, async (req, res) => {
-  let uploadObj = await datastoreUtils.getUploadData('tenant001');
+  let uploadObj = await global.DB.getUploadData();
   uploadObj = JSON.parse(uploadObj["Data"])
   let nextUpload = moment(
     new Date(
@@ -95,7 +94,7 @@ router.get("/", auth, async (req, res) => {
   if (nextUpload.isSameOrBefore(currentDate)) allowUpload = true;
 
   nextUpload = nextUpload.toObject();
-  const pipelineStatus = await datastoreUtils.getPipelineStatus('tenant001');
+  const pipelineStatus = await global.DB.getPipelineStatus();
   const lastTrainingDetails = getTrainingDetails(pipelineStatus);
   res.send({
     allowUpload: allowUpload,
@@ -113,7 +112,7 @@ router.post("/", auth, (req, res) => {
       console.log(err);
       res.status(500).send("Server Error");
     } else {
-      datastoreUtils.updatePipelineStatus('tenant001',{
+      global.DB.updatePipelineStatus({
         "REPL": "Discard"
       }).then((succ)=>{
         storageUtils.uploadFileForTraining('tenant-001',req.file.path).then((result)=>{
@@ -123,7 +122,7 @@ router.post("/", auth, (req, res) => {
           throw new Error(err);
         });
       });
-      datastoreUtils.updateUploadData('tenant001').then((succ)=>{
+      global.DB.updateUploadData().then((succ)=>{
         console.log("Updated upload");
       }).catch((err)=>{
         console.log(err);

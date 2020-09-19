@@ -2,10 +2,13 @@ const express = require("express");
 const router = express.Router();
 // const cache = require("../middlewares/cache");
 const auth = require("../middlewares/auth");
-const categories = global.ASSETS['001']['cat2item'];
 
 router.get("/", auth, async (req, res) => {
   let result = [];
+  if(global.ASSETS===undefined){
+    await global.DB.getCachedAssets(req.tenant);
+  }
+  const categories = global.ASSETS['cat2item'];
   if (!categories) {
     return res.status(500).send("Unable to process. Kindly verify the inputs.");
   }

@@ -2,8 +2,6 @@ const express = require("express");
 const router = express.Router();
 // const cache = require("../middlewares/cache");
 const auth = require("../middlewares/auth");
-const dataStoreUtils = require("../cloud/datastoreUtils");
-const datastoreUtils = require("../cloud/datastoreUtils");
 
 const getDates = (inputs) => {
     years = {};
@@ -24,7 +22,7 @@ const getDates = (inputs) => {
 }
 
 router.get("/", auth, async (req, res) => {
-  let period = await datastoreUtils.getCachedInactivePeriod('001');
+  let period = await global.DB.getCachedInactivePeriod(req.tenant);
   period = period["inputs"];
   let dates = getDates(period);
   res.send(dates);
