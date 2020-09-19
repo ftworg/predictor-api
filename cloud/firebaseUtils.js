@@ -5,11 +5,12 @@ const { get } = require("../routes/model");
 const key = 'n3wS3cr3tK3yF0rC0nt3xt';
 const encryptor = require('simple-encryptor')(key);
 const {DB} = require("../cloud/datastoreUtils");
+const datastoreUtils = require("../cloud/datastoreUtils");
 const getTenantFromEmail = async(email) => {
     if (global.DB===undefined){
         global.DB = new DB(undefined);
     }
-    const userObj = await global.DB.getGenericObject('UserObject',
+    const userObj = await datastoreUtils.getGenericObject('UserObject',
     {
         "user": md5(email)
     });
