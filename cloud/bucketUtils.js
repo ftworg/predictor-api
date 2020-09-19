@@ -62,11 +62,15 @@ const uploadGenericFile = async (bucketName,filename) => {
 }
 
 const downloadGenericFile = async (bucketName,folder,filename) => {
+    global.namespace = '/tmp/'+bucketName;
     const destDir = '/tmp/'+bucketName+"/"+folder;
     const options = {
         destination: destDir+"/"+filename,
     };
     let exists = fs.existsSync(destDir)
+    if(!fs.existsSync('/tmp/'+bucketName)){
+        fs.mkdirSync('/tmp/'+bucketName);
+    }
     if(!exists){
         fs.mkdirSync(destDir);
     }
