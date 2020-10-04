@@ -24,6 +24,28 @@ const getDashboardCache = async (tenant,body) => {
 }
 
 router.post("/", auth, async (req, res) => {
+  if(req.body.from_dashboard!==undefined){
+    req.body.branch = Object.values(global.ASSETS["branches"]);
+    Object.keys(global.ASSETS["cat2item"]).forEach((superCat)=>{
+      req.body.category.push({
+        "super": superCat,
+        "sub": Object.keys(global.ASSETS["cat2item"][superCat])
+      });
+    });
+    yr = new Date(1577904012000);
+    req.body.years.push({
+      "year": yr.getFullYear(),
+      "months": [
+        {
+          "month": yr.getMonth()+1,
+          "dates": [
+            yr.getDate()
+          ]
+        }
+      ]
+    })
+  }
+  // console.log(req.body);
   const { error } = validate(req.body);
   if (error) return res.status(400).send(error.message);
 
@@ -66,6 +88,7 @@ router.post("/", auth, async (req, res) => {
 
 function validate(req) {
   const schema = Joi.object({
+    from_dashboard: Joi.boolean(),
     criteria: Joi.number().integer().min(0).max(2),
     category: Joi.array().items(
       Joi.object({

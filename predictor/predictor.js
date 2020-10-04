@@ -9,7 +9,7 @@ let check_for_models = async (tenant,ver,modelObj) => {
   if (global.model===undefined) {
       try{
         let model = await tf.loadLayersModel(
-        "file:///tmp/"+tenant+"-store/universal_model/"+ver+"/total_model/bin/model.json"
+        "file:///tmp/"+tenant+"-store/assets/model/"+ver+"/total_model/bin/model.json"
         );
         global.model={
           "config": modelObj,
@@ -74,7 +74,7 @@ var feedToUniversalModel = async (inputs) => {
       inputs_context[i].push(input["context_inps"][i]);
     }
     inputs_prods.push([input["prod_ind"]]);
-    inputs_cats.push([input["cat_ind"]]);
+    inputs_cats.push([Number.parseInt(input["cat_ind"])]);
   });
   let univOut = await global.model["model"].predict([tf.expandDims(tf.tensor(inputs_seqs),axis=-1),
                 tf.tensor(inputs_prods),
@@ -496,6 +496,7 @@ var runPrediction = async function(tenant,inputJson) {
     inputs = await composeInputs(tenant,inputJson);
     //Getting existing records
     let gcpOutput;
+    // console.log(inputs,products);
     try{
       gcpOutput = await datastoreUtils.fetchExistingRecords(tenant,inputs,products);
       // console.log(gcpOutput);
